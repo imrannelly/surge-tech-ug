@@ -452,16 +452,72 @@ const SurgeStore = (() => {
 
   async function saveAdminProduct(product) {
     const normalized = normalizeProducts([product])[0];
+    if (!normalized?.id) throw new Error("Product is missing a stable product ID.");
+    const duplicate = state.products.find((item) => item.id === normalized.id && item.localId !== normalized.localId && item.dbId !== normalized.dbId);
+    if (duplicate) throw new Error(`Product ID "${normalized.id}" is already used by ${duplicate.name}. Please choose a unique Product ID.`);
     const supabase = await loadSupabaseClient();
     if (supabase) {
       const row = productToSupabaseRow(normalized);
-      const request = normalized.dbId
-        ? supabase.from("products").update(row).eq("id", normalized.dbId).select().single()
-        : supabase.from("products").upsert(row, { onConflict: "local_id" }).select().single();
-      const { data, error } = await request;
-      if (error) throw error;
+      let data = [];
+      let error = null;
+      console.info("Surge admin product save", {
+        productId: normalized.id,
+        localId: normalized.localId,
+        dbId: normalized.dbId,
+        payload: row,
+      });
+      const saveByLocalId = async () => {
+        const lookup = await supabase.from("products").select("*").eq("local_id", row.local_id).limit(2);
+        console.info("Surge admin product lookup response", { data: lookup.data, error: lookup.error });
+        if (lookup.error) return { data: [], error: lookup.error };
+        if ((lookup.data || []).length > 1) {
+          return {
+            data: [],
+            error: new Error(`Supabase has multiple products with local_id "${row.local_id}". Please remove duplicate rows or add the unique local_id constraint.`),
+          };
+        }
+        if ((lookup.data || []).length === 1) {
+          const response = await supabase.from("products").update(row).eq("id", lookup.data[0].id).select("*").limit(1);
+          return { data: response.data || [], error: response.error };
+        }
+        const response = await supabase.from("products").insert(row).select("*").limit(1);
+        return { data: response.data || [], error: response.error };
+      };
+      if (normalized.dbId) {
+        const response = await supabase.from("products").update(row).eq("id", normalized.dbId).select("*").limit(1);
+        data = response.data || [];
+        error = response.error;
+        if (!error && !data.length) {
+          console.warn("Surge admin product dbId update returned no rows. Retrying with local_id.", {
+            productId: normalized.id,
+            localId: row.local_id,
+            dbId: normalized.dbId,
+          });
+          const fallback = await saveByLocalId();
+          data = fallback.data;
+          error = fallback.error;
+        }
+      } else {
+        const response = await saveByLocalId();
+        data = response.data;
+        error = response.error;
+      }
+      console.info("Surge admin product save response", { data, error });
+      if (error) {
+        console.error("Surge admin product save error", {
+          productId: normalized.id,
+          localId: row.local_id,
+          dbId: normalized.dbId,
+          payload: row,
+          error,
+        });
+        throw error;
+      }
+      if (!Array.isArray(data) || !data.length) {
+        throw new Error(`No matching Supabase product was found for "${normalized.name}". Refresh admin and try again.`);
+      }
       state.supabaseOnline = true;
-      const saved = rowToProduct(data);
+      const saved = rowToProduct(data[0]);
       const rest = state.products.filter((item) => item.dbId !== saved.dbId && item.id !== saved.id);
       saveAdminProducts([saved, ...rest]);
       return saved;
