@@ -473,6 +473,8 @@ const SurgeStore = (() => {
       const row = productToSupabaseRow(normalized);
       let data = [];
       let error = null;
+      const productUpdateBlockedError = (identifier) =>
+        new Error(`Supabase blocked product update for ${identifier}. Your admin login is local-only, so Supabase sees this browser as anon. Add Supabase Auth admin policies, or use the temporary anon write policy only while testing.`);
       console.info("Surge admin product save", {
         productId: normalized.id,
         localId: normalized.localId,
@@ -493,7 +495,7 @@ const SurgeStore = (() => {
           const update = await supabase.from("products").update(row, { count: "exact" }).eq("id", lookup.data[0].id);
           console.info("Surge admin product local_id update result", { data: update.data, count: update.count, error: update.error });
           if (update.error) return { data: [], error: update.error };
-          if (update.count === 0) return { data: [], error: new Error(`Supabase did not update product with local_id "${row.local_id}". Check RLS update policy.`) };
+          if (update.count === 0) return { data: [], error: productUpdateBlockedError(`local_id "${row.local_id}"`) };
           const response = await supabase.from("products").select("*").eq("id", lookup.data[0].id).limit(1);
           return { data: response.data || [], error: response.error };
         }
@@ -543,7 +545,7 @@ const SurgeStore = (() => {
         throw error;
       }
       if (!Array.isArray(data) || !data.length) {
-        throw new Error(`No matching Supabase product was found for "${normalized.name}". Refresh admin and try again.`);
+        throw new Error(`Product "${normalized.name}" was not returned after saving. If this product exists in Supabase, check product SELECT policy and admin UPDATE policy.`);
       }
       state.supabaseOnline = true;
       const saved = rowToProduct(data[0]);

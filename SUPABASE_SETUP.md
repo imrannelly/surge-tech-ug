@@ -181,6 +181,79 @@ with check (auth.jwt() ->> 'app_role' = 'admin');
 
 For first migration only, you may temporarily allow product insert/update with the anon key, migrate your products, then switch back to admin-only write policies.
 
+### Exact Product Admin RLS SQL
+
+The products table is named:
+
+```sql
+products
+```
+
+The local admin password in `ecommerce.js` is only a browser-side gate. Supabase does not know about that password, so requests from the current admin page use the `anon` role unless you add Supabase Auth and sign in. For secure live product editing, create Supabase Auth admin users and allow writes only for those authenticated users.
+
+Run this in Supabase SQL Editor for the production-safe setup:
+
+```sql
+alter table products enable row level security;
+alter table orders enable row level security;
+alter table service_inquiries enable row level security;
+alter table site_settings enable row level security;
+
+drop policy if exists "Public can read active products" on products;
+create policy "Public can read active products"
+on products for select
+using (active = true);
+
+create table if not exists admin_users (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  created_at timestamp default now()
+);
+
+alter table admin_users enable row level security;
+
+drop policy if exists "Admins can read own admin record" on admin_users;
+create policy "Admins can read own admin record"
+on admin_users for select
+to authenticated
+using (auth.uid() = user_id);
+
+drop policy if exists "Authenticated admins can manage products" on products;
+create policy "Authenticated admins can manage products"
+on products for all
+to authenticated
+using (exists (select 1 from admin_users where admin_users.user_id = auth.uid()))
+with check (exists (select 1 from admin_users where admin_users.user_id = auth.uid()));
+```
+
+Then create or invite an admin in Supabase Auth, copy that user's `auth.users.id`, and run:
+
+```sql
+insert into admin_users (user_id)
+values ('PASTE-AUTH-USER-UUID-HERE')
+on conflict (user_id) do nothing;
+```
+
+The current frontend does not yet sign into Supabase Auth, so this secure policy needs an auth login step in the admin UI before product writes will work securely.
+
+### Temporary Testing Policy - Unsafe
+
+Use this only to confirm product saving works, then remove it. This allows anyone with your public anon key to write products.
+
+```sql
+drop policy if exists "TEMP anon can manage products" on products;
+create policy "TEMP anon can manage products"
+on products for all
+to anon
+using (true)
+with check (true);
+```
+
+After testing, remove it:
+
+```sql
+drop policy if exists "TEMP anon can manage products" on products;
+```
+
 ## 4. Optional Product Image Storage
 
 Create a public Supabase Storage bucket named:

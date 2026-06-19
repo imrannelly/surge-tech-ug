@@ -98,3 +98,77 @@ create index if not exists products_active_category_idx on products (active, cat
 create index if not exists products_local_id_idx on products (local_id);
 create index if not exists products_slug_idx on products (slug);
 create index if not exists orders_created_at_idx on orders (created_at desc);
+create index if not exists service_inquiries_created_at_idx on service_inquiries (created_at desc);
+
+-- Row Level Security policy starter
+-- The storefront must be public-read only. Product writes require Supabase Auth;
+-- the local admin password in ecommerce.js is not visible to Supabase and does
+-- not satisfy these admin policies by itself.
+alter table products enable row level security;
+alter table orders enable row level security;
+alter table service_inquiries enable row level security;
+alter table site_settings enable row level security;
+
+drop policy if exists "Public can read active products" on products;
+create policy "Public can read active products"
+on products for select
+using (active = true);
+
+drop policy if exists "Public can create orders" on orders;
+create policy "Public can create orders"
+on orders for insert
+with check (true);
+
+drop policy if exists "Public can create service inquiries" on service_inquiries;
+create policy "Public can create service inquiries"
+on service_inquiries for insert
+with check (true);
+
+drop policy if exists "Public can read site settings" on site_settings;
+create policy "Public can read site settings"
+on site_settings for select
+using (true);
+
+-- Production admin option:
+-- 1. Create Supabase Auth users for admins.
+-- 2. Insert those user IDs into public.admin_users.
+-- 3. Use these policies so only authenticated admin users can write.
+create table if not exists admin_users (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  created_at timestamp default now()
+);
+
+alter table admin_users enable row level security;
+
+drop policy if exists "Admins can read own admin record" on admin_users;
+create policy "Admins can read own admin record"
+on admin_users for select
+to authenticated
+using (auth.uid() = user_id);
+
+drop policy if exists "Authenticated admins can manage products" on products;
+create policy "Authenticated admins can manage products"
+on products for all
+to authenticated
+using (exists (select 1 from admin_users where admin_users.user_id = auth.uid()))
+with check (exists (select 1 from admin_users where admin_users.user_id = auth.uid()));
+
+drop policy if exists "Authenticated admins can read orders" on orders;
+create policy "Authenticated admins can read orders"
+on orders for select
+to authenticated
+using (exists (select 1 from admin_users where admin_users.user_id = auth.uid()));
+
+drop policy if exists "Authenticated admins can update orders" on orders;
+create policy "Authenticated admins can update orders"
+on orders for update
+to authenticated
+using (exists (select 1 from admin_users where admin_users.user_id = auth.uid()))
+with check (exists (select 1 from admin_users where admin_users.user_id = auth.uid()));
+
+drop policy if exists "Authenticated admins can manage site settings" on site_settings;
+create policy "Authenticated admins can manage site settings"
+on site_settings for all
+to authenticated
+using (exists (select 1 from admin_users where admin_users.user_id = auth.uid()))
+with check (exists (select 1 from admin_users where admin_users.user_id = auth.uid()));
