@@ -1077,3 +1077,45 @@ svg{
     padding:0 10px;
   }
 }
+
+.card-wa{
+  top:8px;
+  right:8px;
+  width:30px;
+  height:30px;
+  min-width:30px;
+  min-height:30px;
+  color:#073516;
+  background:#25d366;
+  box-shadow:0 4px 12px rgba(37,211,102,.24);
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
+  animation:card-wa-pulse 3.6s ease-in-out infinite;
+}
+.card-wa svg{
+  width:17px;
+  height:17px;
+}
+.card-wa:hover,
+.card-wa:focus-visible{
+  transform:translateY(-1px) scale(1.06);
+  box-shadow:0 7px 16px rgba(37,211,102,.3);
+  outline:none;
+}
+@keyframes card-wa-pulse{
+  0%,100%{box-shadow:0 4px 12px rgba(37,211,102,.22)}
+  50%{box-shadow:0 4px 14px rgba(37,211,102,.34)}
+}
+@media(max-width:720px){
+  .card-wa{
+    top:7px;
+    right:7px;
+    width:28px;
+    height:28px;
+    min-width:28px;
+    min-height:28px;
+  }
+  .card-wa svg{
+    width:16px;
+    height:16px;
+  }
+}

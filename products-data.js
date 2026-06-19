@@ -9,19 +9,19 @@ window.SURGE_PRODUCTS = [
     "subcategory": "iPhones",
     "brand": "Apple",
     "model": "iPhone 14 Pro",
-    "condition": "Used",
+    "condition": "UK Used",
     "price": 1900000,
     "oldPrice": 1900000,
     "originalPrice": 1900000,
     "currency": "UGX",
     "stock": 4,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 154,
+    "rating": 4.5,
+    "reviews": 164,
     "images": [
-      "images/products/iphone-14-pro-128gb-1.jpg",
-      "images/products/iphone-14-pro-128gb-2.jpg",
-      "images/products/iphone-14-pro-128gb-3.jpg"
+      "Images/products/iphone-14-pro-128gb-1.jpg",
+      "Images/products/iphone-14-pro-128gb-2.jpg",
+      "Images/products/iphone-14-pro-128gb-3.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -62,19 +62,19 @@ window.SURGE_PRODUCTS = [
     "subcategory": "iPhones",
     "brand": "Apple",
     "model": "iPhone 13 Pro Max",
-    "condition": "Used",
+    "condition": "UK Used",
     "price": 1900000,
     "oldPrice": 1900000,
     "originalPrice": 1900000,
     "currency": "UGX",
     "stock": 4,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 16,
+    "rating": 4.5,
+    "reviews": 36,
     "images": [
-      "images/products/iphone-13-pro-max-256gb-1.jpg",
-      "images/products/iphone-13-pro-max-256gb-2.jpg",
-      "images/products/iphone-13-pro-max-256gb-3.jpg"
+      "Images/products/iphone-13-pro-max-256gb-1.jpg",
+      "Images/products/iphone-13-pro-max-256gb-2.jpg",
+      "Images/products/iphone-13-pro-max-256gb-3.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -123,12 +123,12 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 9,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 216,
+    "rating": 4.9,
+    "reviews": 229,
     "images": [
-      "images/products/iphone-13-128gb-1.jpg",
-      "images/products/iphone-13-128gb-2.jpg",
-      "images/products/iphone-13-128gb-3.jpg"
+      "Images/products/iphone-13-128gb-1.jpg",
+      "Images/products/iphone-13-128gb-2.jpg",
+      "Images/products/iphone-13-128gb-3.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -168,19 +168,19 @@ window.SURGE_PRODUCTS = [
     "subcategory": "iPhones",
     "brand": "Apple",
     "model": "iPhone 12 Pro",
-    "condition": "Used",
+    "condition": "UK Used",
     "price": 1000000,
     "oldPrice": 1000000,
     "originalPrice": 1000000,
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 47,
+    "rating": 4.4,
+    "reviews": 46,
     "images": [
-      "images/products/iphone-12-pro-128gb-1.jpg",
-      "images/products/iphone-12-pro-128gb-2.jpg",
-      "images/products/iphone-12-pro-128gb-3.jpg"
+      "Images/products/iphone-12-pro-128gb-1.jpg",
+      "Images/products/iphone-12-pro-128gb-2.jpg",
+      "Images/products/iphone-12-pro-128gb-3.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -221,19 +221,19 @@ window.SURGE_PRODUCTS = [
     "subcategory": "iPhones",
     "brand": "Apple",
     "model": "iPhone 12",
-    "condition": "Used",
+    "condition": "UK Used",
     "price": 700000,
     "oldPrice": 700000,
     "originalPrice": 700000,
     "currency": "UGX",
     "stock": 9,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 16,
+    "rating": 4.8,
+    "reviews": 36,
     "images": [
-      "images/products/iphone-12-64gb-1.jpg",
-      "images/products/iphone-12-64gb-2.jpg",
-      "images/products/iphone-12-64gb-3.jpg"
+      "Images/products/iphone-12-64gb-1.jpg",
+      "Images/products/iphone-12-64gb-2.jpg",
+      "Images/products/iphone-12-64gb-3.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -280,12 +280,12 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
+    "rating": 4.5,
     "reviews": 118,
     "images": [
-      "images/products/iphone-11-pro-max-256gb-1.jpg",
-      "images/products/iphone-11-pro-max-256gb-2.jpg",
-      "images/products/iphone-11-pro-max-256gb-3.jpg"
+      "Images/products/iphone-11-pro-max-256gb-1.jpg",
+      "Images/products/iphone-11-pro-max-256gb-2.jpg",
+      "Images/products/iphone-11-pro-max-256gb-3.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -335,11 +335,11 @@ window.SURGE_PRODUCTS = [
     "stock": 12,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 14,
+    "reviews": 36,
     "images": [
-      "images/products/iphone-11-64gb-1.jpg",
-      "images/products/iphone-11-64gb-2.jpg",
-      "images/products/iphone-11-64gb-3.jpg"
+      "Images/products/iphone-11-64gb-1.jpg",
+      "Images/products/iphone-11-64gb-2.jpg",
+      "Images/products/iphone-11-64gb-3.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -386,12 +386,12 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 5,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 11,
+    "rating": 4.9,
+    "reviews": 36,
     "images": [
-      "images/products/iphone-xs-max-256gb-1.jpg",
-      "images/products/iphone-xs-max-256gb-2.jpg",
-      "images/products/iphone-xs-max-256gb-3.jpg"
+      "Images/products/iphone-xs-max-256gb-1.jpg",
+      "Images/products/iphone-xs-max-256gb-2.jpg",
+      "Images/products/iphone-xs-max-256gb-3.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -439,12 +439,12 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 10,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 210,
+    "rating": 4.5,
+    "reviews": 211,
     "images": [
-      "images/products/iphone-xr-64gb-1.jpg",
-      "images/products/iphone-xr-64gb-2.jpg",
-      "images/products/iphone-xr-64gb-3.jpg"
+      "Images/products/iphone-xr-64gb-1.jpg",
+      "Images/products/iphone-xr-64gb-2.jpg",
+      "Images/products/iphone-xr-64gb-3.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -491,12 +491,12 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 8,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 9,
+    "rating": 4.5,
+    "reviews": 36,
     "images": [
-      "images/products/iphone-x-64gb-1.jpg",
-      "images/products/iphone-x-64gb-2.jpg",
-      "images/products/iphone-x-64gb-3.jpg"
+      "Images/products/iphone-x-64gb-1.jpg",
+      "Images/products/iphone-x-64gb-2.jpg",
+      "Images/products/iphone-x-64gb-3.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -536,7 +536,7 @@ window.SURGE_PRODUCTS = [
     "subcategory": "MacBook Pro",
     "brand": "Apple",
     "model": "MacBook Pro 2018 Core i5 8GB",
-    "condition": "Used",
+    "condition": "UK Used",
     "price": 1600000,
     "oldPrice": 1600000,
     "originalPrice": 1600000,
@@ -544,12 +544,12 @@ window.SURGE_PRODUCTS = [
     "stock": 8,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 8,
+    "reviews": 36,
     "images": [
-      "images/products/macbook-pro-2018-core-i5-8gb-256gb-1.jpg",
-      "images/products/macbook-pro-2018-core-i5-8gb-256gb-2.jpg",
-      "images/products/macbook-pro-2018-core-i5-8gb-256gb-3.jpg",
-      "images/products/macbook-pro-2018-core-i5-8gb-256gb-4.jpg"
+      "Images/products/macbook-pro-2018-core-i5-8gb-256gb-1.jpg",
+      "Images/products/macbook-pro-2018-core-i5-8gb-256gb-2.jpg",
+      "Images/products/macbook-pro-2018-core-i5-8gb-256gb-3.jpg",
+      "Images/products/macbook-pro-2018-core-i5-8gb-256gb-4.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -599,13 +599,13 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 7,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 12,
+    "rating": 4.9,
+    "reviews": 36,
     "images": [
-      "images/products/macbook-air-13-2017-core-i7-8gb-256gb-1.jpg",
-      "images/products/macbook-air-13-2017-core-i7-8gb-256gb-2.jpg",
-      "images/products/macbook-air-13-2017-core-i7-8gb-256gb-3.jpg",
-      "images/products/macbook-air-13-2017-core-i7-8gb-256gb-4.jpg"
+      "Images/products/macbook-air-13-2017-core-i7-8gb-256gb-1.jpg",
+      "Images/products/macbook-air-13-2017-core-i7-8gb-256gb-2.jpg",
+      "Images/products/macbook-air-13-2017-core-i7-8gb-256gb-3.jpg",
+      "Images/products/macbook-air-13-2017-core-i7-8gb-256gb-4.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -647,20 +647,20 @@ window.SURGE_PRODUCTS = [
     "subcategory": "MacBook Air",
     "brand": "Apple",
     "model": "MacBook Air 13 2017 Core i5 8GB",
-    "condition": "Used",
+    "condition": "UK Used",
     "price": 800000,
     "oldPrice": 800000,
     "originalPrice": 800000,
     "currency": "UGX",
     "stock": 12,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 32,
+    "rating": 4.8,
+    "reviews": 36,
     "images": [
-      "images/products/macbook-air-13-2017-core-i5-8gb-128gb-1.jpg",
-      "images/products/macbook-air-13-2017-core-i5-8gb-128gb-2.jpg",
-      "images/products/macbook-air-13-2017-core-i5-8gb-128gb-3.jpg",
-      "images/products/macbook-air-13-2017-core-i5-8gb-128gb-4.jpg"
+      "Images/products/macbook-air-13-2017-core-i5-8gb-128gb-1.jpg",
+      "Images/products/macbook-air-13-2017-core-i5-8gb-128gb-2.jpg",
+      "Images/products/macbook-air-13-2017-core-i5-8gb-128gb-3.jpg",
+      "Images/products/macbook-air-13-2017-core-i5-8gb-128gb-4.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -709,13 +709,13 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 5,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 4,
+    "rating": 4.7,
+    "reviews": 36,
     "images": [
-      "images/products/macbook-air-13-2015-core-i5-8gb-256gb-1.jpg",
-      "images/products/macbook-air-13-2015-core-i5-8gb-256gb-2.jpg",
-      "images/products/macbook-air-13-2015-core-i5-8gb-256gb-3.jpg",
-      "images/products/macbook-air-13-2015-core-i5-8gb-256gb-4.jpg"
+      "Images/products/macbook-air-13-2015-core-i5-8gb-256gb-1.jpg",
+      "Images/products/macbook-air-13-2015-core-i5-8gb-256gb-2.jpg",
+      "Images/products/macbook-air-13-2015-core-i5-8gb-256gb-3.jpg",
+      "Images/products/macbook-air-13-2015-core-i5-8gb-256gb-4.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -764,12 +764,12 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 5,
     "status": "In Stock",
-    "rating": 4.8,
-    "reviews": 10,
+    "rating": 4.5,
+    "reviews": 36,
     "images": [
-      "images/products/macbook-air-13-2014-core-i5-4gb-256gb-1.jpg",
-      "images/products/macbook-air-13-2014-core-i5-4gb-256gb-2.jpg",
-      "images/products/macbook-air-13-2014-core-i5-4gb-256gb-3.jpg"
+      "Images/products/macbook-air-13-2014-core-i5-4gb-256gb-1.jpg",
+      "Images/products/macbook-air-13-2014-core-i5-4gb-256gb-2.jpg",
+      "Images/products/macbook-air-13-2014-core-i5-4gb-256gb-3.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -811,20 +811,20 @@ window.SURGE_PRODUCTS = [
     "subcategory": "MacBook Air",
     "brand": "Apple",
     "model": "MacBook Air 13 2013 Core i5 4GB",
-    "condition": "Used",
+    "condition": "UK Used",
     "price": 650000,
     "oldPrice": 600000,
     "originalPrice": 600000,
     "currency": "UGX",
     "stock": 5,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 4,
+    "rating": 4.8,
+    "reviews": 36,
     "images": [
-      "images/products/macbook-air-13-2013-core-i5-4gb-128gb-1.jpg",
-      "images/products/macbook-air-13-2013-core-i5-4gb-128gb-2.jpg",
-      "images/products/macbook-air-13-2013-core-i5-4gb-128gb-3.jpg",
-      "images/products/macbook-air-13-2013-core-i5-4gb-128gb-4.jpg"
+      "Images/products/macbook-air-13-2013-core-i5-4gb-128gb-1.jpg",
+      "Images/products/macbook-air-13-2013-core-i5-4gb-128gb-2.jpg",
+      "Images/products/macbook-air-13-2013-core-i5-4gb-128gb-3.jpg",
+      "Images/products/macbook-air-13-2013-core-i5-4gb-128gb-4.jpg"
     ],
     "colors": [],
     "badge": "",
@@ -873,8 +873,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 3,
     "status": "Low Stock",
-    "rating": 4.6,
-    "reviews": 81,
+    "rating": 4.7,
+    "reviews": 93,
     "images": [
       "https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&w=900&q=80&sig=11"
     ],
@@ -924,8 +924,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 7,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 179,
+    "rating": 4.7,
+    "reviews": 192,
     "images": [
       "https://images.unsplash.com/photo-1565849904461-04a58ad377e0?auto=format&fit=crop&w=900&q=80&sig=12"
     ],
@@ -974,8 +974,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 61,
+    "rating": 4.5,
+    "reviews": 47,
     "images": [
       "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=900&q=80&sig=13"
     ],
@@ -1024,8 +1024,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 4,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 231,
+    "rating": 4.4,
+    "reviews": 244,
     "images": [
       "https://images.unsplash.com/photo-1605236453806-6ff36851218e?auto=format&fit=crop&w=900&q=80&sig=14"
     ],
@@ -1075,8 +1075,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 3,
     "status": "Low Stock",
-    "rating": 4.6,
-    "reviews": 130,
+    "rating": 4.5,
+    "reviews": 141,
     "images": [
       "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?auto=format&fit=crop&w=900&q=80&sig=15"
     ],
@@ -1126,8 +1126,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 14,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 147,
+    "rating": 4.7,
+    "reviews": 161,
     "images": [
       "https://images.unsplash.com/photo-1616348436168-de43ad0db179?auto=format&fit=crop&w=900&q=80&sig=16"
     ],
@@ -1176,8 +1176,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 9,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 120,
+    "rating": 4.7,
+    "reviews": 123,
     "images": [
       "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=900&q=80&sig=17"
     ],
@@ -1226,8 +1226,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 13,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 92,
+    "rating": 4.7,
+    "reviews": 90,
     "images": [
       "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80&sig=18"
     ],
@@ -1276,8 +1276,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 8,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 154,
+    "rating": 4.7,
+    "reviews": 142,
     "images": [
       "https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&w=900&q=80&sig=19"
     ],
@@ -1326,8 +1326,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 3,
     "status": "Low Stock",
-    "rating": 4.6,
-    "reviews": 129,
+    "rating": 4.5,
+    "reviews": 136,
     "images": [
       "https://images.unsplash.com/photo-1565849904461-04a58ad377e0?auto=format&fit=crop&w=900&q=80&sig=20"
     ],
@@ -1376,8 +1376,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 12,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 97,
+    "rating": 4.7,
+    "reviews": 90,
     "images": [
       "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=900&q=80&sig=21"
     ],
@@ -1427,7 +1427,7 @@ window.SURGE_PRODUCTS = [
     "stock": 12,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 76,
+    "reviews": 74,
     "images": [
       "https://images.unsplash.com/photo-1605236453806-6ff36851218e?auto=format&fit=crop&w=900&q=80&sig=22"
     ],
@@ -1475,8 +1475,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 13,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 65,
+    "rating": 4.7,
+    "reviews": 63,
     "images": [
       "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?auto=format&fit=crop&w=900&q=80&sig=23"
     ],
@@ -1526,8 +1526,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 15,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 179,
+    "rating": 4.5,
+    "reviews": 181,
     "images": [
       "https://images.unsplash.com/photo-1616348436168-de43ad0db179?auto=format&fit=crop&w=900&q=80&sig=24"
     ],
@@ -1577,8 +1577,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 4,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 203,
+    "rating": 4.9,
+    "reviews": 207,
     "images": [
       "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=900&q=80&sig=25"
     ],
@@ -1627,7 +1627,7 @@ window.SURGE_PRODUCTS = [
     "stock": 5,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 220,
+    "reviews": 219,
     "images": [
       "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=900&q=80&sig=32"
     ],
@@ -1679,8 +1679,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 5,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 91,
+    "rating": 4.7,
+    "reviews": 82,
     "images": [
       "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=80&sig=33"
     ],
@@ -1733,7 +1733,7 @@ window.SURGE_PRODUCTS = [
     "stock": 5,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 125,
+    "reviews": 109,
     "images": [
       "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=900&q=80&sig=34"
     ],
@@ -1783,8 +1783,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 5,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 116,
+    "rating": 4.8,
+    "reviews": 120,
     "images": [
       "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=80&sig=35"
     ],
@@ -1834,8 +1834,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 5,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 144,
+    "rating": 4.5,
+    "reviews": 136,
     "images": [
       "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=80&sig=36"
     ],
@@ -1887,8 +1887,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 5,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 55,
+    "rating": 4.7,
+    "reviews": 41,
     "images": [
       "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=900&q=80&sig=37"
     ],
@@ -1940,8 +1940,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 5,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 191,
+    "rating": 4.4,
+    "reviews": 208,
     "images": [
       "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=80&sig=38"
     ],
@@ -1992,8 +1992,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 5,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 215,
+    "rating": 4.9,
+    "reviews": 225,
     "images": [
       "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=900&q=80&sig=39"
     ],
@@ -2045,8 +2045,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 5,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 195,
+    "rating": 4.8,
+    "reviews": 201,
     "images": [
       "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=80&sig=40"
     ],
@@ -2097,8 +2097,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 5,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 187,
+    "rating": 4.8,
+    "reviews": 173,
     "images": [
       "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=80&sig=41"
     ],
@@ -2150,8 +2150,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 5,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 86,
+    "rating": 4.8,
+    "reviews": 85,
     "images": [
       "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=900&q=80&sig=42"
     ],
@@ -2201,8 +2201,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 5,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 180,
+    "rating": 4.8,
+    "reviews": 167,
     "images": [
       "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=80&sig=43"
     ],
@@ -2252,8 +2252,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 162,
+    "rating": 4.8,
+    "reviews": 149,
     "images": [
       "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?auto=format&fit=crop&w=900&q=80&sig=44"
     ],
@@ -2303,7 +2303,7 @@ window.SURGE_PRODUCTS = [
     "stock": 6,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 156,
+    "reviews": 140,
     "images": [
       "https://images.unsplash.com/photo-1542393545-10f5cde2c810?auto=format&fit=crop&w=900&q=80&sig=45"
     ],
@@ -2352,8 +2352,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 71,
+    "rating": 4.7,
+    "reviews": 89,
     "images": [
       "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=80&sig=46"
     ],
@@ -2402,8 +2402,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 89,
+    "rating": 4.5,
+    "reviews": 104,
     "images": [
       "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=900&q=80&sig=47"
     ],
@@ -2452,8 +2452,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 77,
+    "rating": 4.9,
+    "reviews": 94,
     "images": [
       "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=900&q=80&sig=48"
     ],
@@ -2502,8 +2502,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 189,
+    "rating": 4.9,
+    "reviews": 201,
     "images": [
       "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?auto=format&fit=crop&w=900&q=80&sig=49"
     ],
@@ -2552,8 +2552,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 171,
+    "rating": 4.9,
+    "reviews": 183,
     "images": [
       "https://images.unsplash.com/photo-1542393545-10f5cde2c810?auto=format&fit=crop&w=900&q=80&sig=50"
     ],
@@ -2602,8 +2602,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 151,
+    "rating": 4.9,
+    "reviews": 149,
     "images": [
       "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=80&sig=51"
     ],
@@ -2653,8 +2653,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 117,
+    "rating": 4.9,
+    "reviews": 103,
     "images": [
       "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=900&q=80&sig=52"
     ],
@@ -2703,8 +2703,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 186,
+    "rating": 4.4,
+    "reviews": 181,
     "images": [
       "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=900&q=80&sig=53"
     ],
@@ -2753,8 +2753,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 93,
+    "rating": 4.7,
+    "reviews": 97,
     "images": [
       "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?auto=format&fit=crop&w=900&q=80&sig=54"
     ],
@@ -2803,8 +2803,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 60,
+    "rating": 4.7,
+    "reviews": 50,
     "images": [
       "https://images.unsplash.com/photo-1542393545-10f5cde2c810?auto=format&fit=crop&w=900&q=80&sig=55"
     ],
@@ -2854,7 +2854,7 @@ window.SURGE_PRODUCTS = [
     "stock": 6,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 47,
+    "reviews": 65,
     "images": [
       "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=80&sig=56"
     ],
@@ -2903,8 +2903,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 178,
+    "rating": 4.8,
+    "reviews": 182,
     "images": [
       "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=900&q=80&sig=57"
     ],
@@ -2953,8 +2953,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 156,
+    "rating": 4.7,
+    "reviews": 154,
     "images": [
       "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=900&q=80&sig=58"
     ],
@@ -3003,8 +3003,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 57,
+    "rating": 4.7,
+    "reviews": 72,
     "images": [
       "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?auto=format&fit=crop&w=900&q=80&sig=59"
     ],
@@ -3053,8 +3053,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 73,
+    "rating": 4.5,
+    "reviews": 56,
     "images": [
       "https://images.unsplash.com/photo-1542393545-10f5cde2c810?auto=format&fit=crop&w=900&q=80&sig=60"
     ],
@@ -3103,8 +3103,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 76,
+    "rating": 4.5,
+    "reviews": 78,
     "images": [
       "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=80&sig=61"
     ],
@@ -3153,8 +3153,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 140,
+    "rating": 4.7,
+    "reviews": 153,
     "images": [
       "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=900&q=80&sig=62"
     ],
@@ -3205,7 +3205,7 @@ window.SURGE_PRODUCTS = [
     "stock": 6,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 157,
+    "reviews": 156,
     "images": [
       "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=900&q=80&sig=63"
     ],
@@ -3255,8 +3255,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 78,
+    "rating": 4.8,
+    "reviews": 74,
     "images": [
       "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?auto=format&fit=crop&w=900&q=80&sig=64"
     ],
@@ -3306,8 +3306,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 87,
+    "rating": 4.7,
+    "reviews": 75,
     "images": [
       "https://images.unsplash.com/photo-1542393545-10f5cde2c810?auto=format&fit=crop&w=900&q=80&sig=65"
     ],
@@ -3357,8 +3357,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 207,
+    "rating": 4.5,
+    "reviews": 209,
     "images": [
       "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=80&sig=66"
     ],
@@ -3408,8 +3408,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 82,
+    "rating": 4.9,
+    "reviews": 97,
     "images": [
       "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=900&q=80&sig=67"
     ],
@@ -3459,8 +3459,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 88,
+    "rating": 4.9,
+    "reviews": 96,
     "images": [
       "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=900&q=80&sig=68"
     ],
@@ -3509,8 +3509,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 6,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 210,
+    "rating": 4.9,
+    "reviews": 192,
     "images": [
       "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?auto=format&fit=crop&w=900&q=80&sig=69"
     ],
@@ -3561,7 +3561,7 @@ window.SURGE_PRODUCTS = [
     "stock": 6,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 228,
+    "reviews": 230,
     "images": [
       "https://images.unsplash.com/photo-1542393545-10f5cde2c810?auto=format&fit=crop&w=900&q=80&sig=70"
     ],
@@ -3610,8 +3610,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 30,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 61,
+    "rating": 4.9,
+    "reviews": 52,
     "images": [
       "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=900&q=80&sig=71"
     ],
@@ -3661,8 +3661,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 40,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 122,
+    "rating": 4.8,
+    "reviews": 126,
     "images": [
       "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?auto=format&fit=crop&w=900&q=80&sig=72"
     ],
@@ -3713,8 +3713,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 22,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 187,
+    "rating": 4.5,
+    "reviews": 178,
     "images": [
       "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=80&sig=73"
     ],
@@ -3764,8 +3764,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 20,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 89,
+    "rating": 4.7,
+    "reviews": 103,
     "images": [
       "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?auto=format&fit=crop&w=900&q=80&sig=74"
     ],
@@ -3815,8 +3815,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 25,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 188,
+    "rating": 4.7,
+    "reviews": 176,
     "images": [
       "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=900&q=80&sig=75"
     ],
@@ -3865,8 +3865,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 8,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 140,
+    "rating": 4.7,
+    "reviews": 124,
     "images": [
       "https://images.unsplash.com/photo-1618410320928-25228d811631?auto=format&fit=crop&w=900&q=80&sig=76"
     ],
@@ -3915,7 +3915,7 @@ window.SURGE_PRODUCTS = [
     "stock": 5,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 196,
+    "reviews": 201,
     "images": [
       "https://images.unsplash.com/photo-1561154464-82e9adf32764?auto=format&fit=crop&w=900&q=80&sig=77"
     ],
@@ -3964,8 +3964,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 18,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 216,
+    "rating": 4.9,
+    "reviews": 218,
     "images": [
       "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=900&q=80&sig=78"
     ],
@@ -4014,7 +4014,7 @@ window.SURGE_PRODUCTS = [
     "stock": 15,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 210,
+    "reviews": 206,
     "images": [
       "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?auto=format&fit=crop&w=900&q=80&sig=79"
     ],
@@ -4063,7 +4063,7 @@ window.SURGE_PRODUCTS = [
     "stock": 12,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 92,
+    "reviews": 76,
     "images": [
       "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=80&sig=80"
     ],
@@ -4112,8 +4112,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 14,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 109,
+    "rating": 4.8,
+    "reviews": 127,
     "images": [
       "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?auto=format&fit=crop&w=900&q=80&sig=81"
     ],
@@ -4163,8 +4163,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 11,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 163,
+    "rating": 4.9,
+    "reviews": 147,
     "images": [
       "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=900&q=80&sig=82"
     ],
@@ -4215,7 +4215,7 @@ window.SURGE_PRODUCTS = [
     "stock": 26,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 132,
+    "reviews": 150,
     "images": [
       "https://images.unsplash.com/photo-1618410320928-25228d811631?auto=format&fit=crop&w=900&q=80&sig=83"
     ],
@@ -4265,7 +4265,7 @@ window.SURGE_PRODUCTS = [
     "stock": 18,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 143,
+    "reviews": 134,
     "images": [
       "https://images.unsplash.com/photo-1561154464-82e9adf32764?auto=format&fit=crop&w=900&q=80&sig=84"
     ],
@@ -4314,8 +4314,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 18,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 229,
+    "rating": 4.8,
+    "reviews": 234,
     "images": [
       "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=900&q=80&sig=85"
     ],
@@ -4364,8 +4364,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 16,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 113,
+    "rating": 4.9,
+    "reviews": 119,
     "images": [
       "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?auto=format&fit=crop&w=900&q=80&sig=86"
     ],
@@ -4415,7 +4415,7 @@ window.SURGE_PRODUCTS = [
     "stock": 25,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 185,
+    "reviews": 172,
     "images": [
       "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=80&sig=87"
     ],
@@ -4465,7 +4465,7 @@ window.SURGE_PRODUCTS = [
     "stock": 12,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 45,
+    "reviews": 43,
     "images": [
       "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?auto=format&fit=crop&w=900&q=80&sig=88"
     ],
@@ -4515,7 +4515,7 @@ window.SURGE_PRODUCTS = [
     "stock": 20,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 121,
+    "reviews": 111,
     "images": [
       "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=900&q=80&sig=89"
     ],
@@ -4566,8 +4566,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 13,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 139,
+    "rating": 4.8,
+    "reviews": 157,
     "images": [
       "https://images.unsplash.com/photo-1618410320928-25228d811631?auto=format&fit=crop&w=900&q=80&sig=90"
     ],
@@ -4617,8 +4617,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 18,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 58,
+    "rating": 4.8,
+    "reviews": 45,
     "images": [
       "https://images.unsplash.com/photo-1561154464-82e9adf32764?auto=format&fit=crop&w=900&q=80&sig=91"
     ],
@@ -4669,7 +4669,7 @@ window.SURGE_PRODUCTS = [
     "stock": 30,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 192,
+    "reviews": 199,
     "images": [
       "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=900&q=80&sig=92"
     ],
@@ -4719,7 +4719,7 @@ window.SURGE_PRODUCTS = [
     "stock": 10,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 194,
+    "reviews": 211,
     "images": [
       "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?auto=format&fit=crop&w=900&q=80&sig=93"
     ],
@@ -4770,7 +4770,7 @@ window.SURGE_PRODUCTS = [
     "stock": 18,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 144,
+    "reviews": 152,
     "images": [
       "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=80&sig=94"
     ],
@@ -4819,7 +4819,7 @@ window.SURGE_PRODUCTS = [
     "stock": 35,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 142,
+    "reviews": 140,
     "images": [
       "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?auto=format&fit=crop&w=900&q=80&sig=95"
     ],
@@ -4868,8 +4868,8 @@ window.SURGE_PRODUCTS = [
     "currency": "UGX",
     "stock": 12,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 218,
+    "rating": 4.7,
+    "reviews": 204,
     "images": [
       "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=900&q=80&sig=96"
     ],
@@ -4914,13 +4914,13 @@ window.SURGE_PRODUCTS = [
     "model": "Logo Design",
     "condition": "Brand New",
     "price": 80000,
-    "oldPrice": 120000,
-    "originalPrice": 120000,
+    "oldPrice": 80000,
+    "originalPrice": 80000,
     "currency": "UGX",
     "stock": 10,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 139,
+    "reviews": 140,
     "images": [
       "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=900&q=80&sig=97"
     ],
@@ -4964,13 +4964,13 @@ window.SURGE_PRODUCTS = [
     "model": "Poster Design",
     "condition": "Brand New",
     "price": 30000,
-    "oldPrice": 80000,
-    "originalPrice": 80000,
+    "oldPrice": 30000,
+    "originalPrice": 30000,
     "currency": "UGX",
     "stock": 10,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 72,
+    "rating": 4.7,
+    "reviews": 54,
     "images": [
       "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80&sig=98"
     ],
@@ -5014,13 +5014,13 @@ window.SURGE_PRODUCTS = [
     "model": "Business Cards",
     "condition": "Brand New",
     "price": 50000,
-    "oldPrice": 90000,
-    "originalPrice": 90000,
+    "oldPrice": 50000,
+    "originalPrice": 50000,
     "currency": "UGX",
     "stock": 10,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 198,
+    "reviews": 190,
     "images": [
       "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=900&q=80&sig=99"
     ],
@@ -5064,13 +5064,13 @@ window.SURGE_PRODUCTS = [
     "model": "Flyers",
     "condition": "Brand New",
     "price": 40000,
-    "oldPrice": 100000,
-    "originalPrice": 100000,
+    "oldPrice": 40000,
+    "originalPrice": 40000,
     "currency": "UGX",
     "stock": 10,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 166,
+    "rating": 4.7,
+    "reviews": 160,
     "images": [
       "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=900&q=80&sig=100"
     ],
@@ -5112,13 +5112,13 @@ window.SURGE_PRODUCTS = [
     "model": "Branding Package",
     "condition": "Brand New",
     "price": 250000,
-    "oldPrice": 350000,
-    "originalPrice": 350000,
+    "oldPrice": 250000,
+    "originalPrice": 250000,
     "currency": "UGX",
     "stock": 10,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 114,
+    "rating": 4.4,
+    "reviews": 101,
     "images": [
       "https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=900&q=80&sig=101"
     ],
@@ -5162,13 +5162,13 @@ window.SURGE_PRODUCTS = [
     "model": "Motion Graphics",
     "condition": "Brand New",
     "price": 200000,
-    "oldPrice": 300000,
-    "originalPrice": 300000,
+    "oldPrice": 200000,
+    "originalPrice": 200000,
     "currency": "UGX",
     "stock": 10,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 181,
+    "rating": 4.7,
+    "reviews": 174,
     "images": [
       "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=900&q=80&sig=102"
     ],
@@ -5212,13 +5212,13 @@ window.SURGE_PRODUCTS = [
     "model": "3D Design",
     "condition": "Brand New",
     "price": 250000,
-    "oldPrice": 350000,
-    "originalPrice": 350000,
+    "oldPrice": 250000,
+    "originalPrice": 250000,
     "currency": "UGX",
     "stock": 10,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 57,
+    "rating": 4.7,
+    "reviews": 54,
     "images": [
       "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80&sig=103"
     ],
@@ -5261,13 +5261,13 @@ window.SURGE_PRODUCTS = [
     "model": "Social Media Graphics",
     "condition": "Brand New",
     "price": 35000,
-    "oldPrice": 120000,
-    "originalPrice": 120000,
+    "oldPrice": 35000,
+    "originalPrice": 35000,
     "currency": "UGX",
     "stock": 10,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 139,
+    "reviews": 131,
     "images": [
       "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=900&q=80&sig=104"
     ],
@@ -5312,13 +5312,13 @@ window.SURGE_PRODUCTS = [
     "model": "Magazine Catalogue Design",
     "condition": "Brand New",
     "price": 180000,
-    "oldPrice": 450000,
-    "originalPrice": 450000,
+    "oldPrice": 180000,
+    "originalPrice": 180000,
     "currency": "UGX",
     "stock": 10,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 234,
+    "rating": 4.8,
+    "reviews": 222,
     "images": [
       "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=900&q=80&sig=105"
     ],
@@ -5363,13 +5363,13 @@ window.SURGE_PRODUCTS = [
     "model": "Website Design",
     "condition": "Brand New",
     "price": 450000,
-    "oldPrice": 650000,
-    "originalPrice": 650000,
+    "oldPrice": 450000,
+    "originalPrice": 450000,
     "currency": "UGX",
     "stock": 10,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 132,
+    "rating": 4.7,
+    "reviews": 130,
     "images": [
       "https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=900&q=80&sig=106"
     ],
@@ -5413,13 +5413,13 @@ window.SURGE_PRODUCTS = [
     "model": "Laptop Repair",
     "condition": "Brand New",
     "price": 30000,
-    "oldPrice": 90000,
-    "originalPrice": 90000,
+    "oldPrice": 30000,
+    "originalPrice": 30000,
     "currency": "UGX",
     "stock": 15,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 186,
+    "reviews": 193,
     "images": [
       "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=900&q=80&sig=107"
     ],
@@ -5463,12 +5463,12 @@ window.SURGE_PRODUCTS = [
     "model": "Phone Repair",
     "condition": "Brand New",
     "price": 25000,
-    "oldPrice": 90000,
-    "originalPrice": 90000,
+    "oldPrice": 25000,
+    "originalPrice": 25000,
     "currency": "UGX",
     "stock": 15,
     "status": "In Stock",
-    "rating": 4.6,
+    "rating": 4.7,
     "reviews": 68,
     "images": [
       "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80&sig=108"
@@ -5513,13 +5513,13 @@ window.SURGE_PRODUCTS = [
     "model": "Software Installation",
     "condition": "Brand New",
     "price": 25000,
-    "oldPrice": 60000,
-    "originalPrice": 60000,
+    "oldPrice": 25000,
+    "originalPrice": 25000,
     "currency": "UGX",
     "stock": 15,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 149,
+    "rating": 4.5,
+    "reviews": 158,
     "images": [
       "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=900&q=80&sig=109"
     ],
@@ -5563,13 +5563,13 @@ window.SURGE_PRODUCTS = [
     "model": "Windows Installation",
     "condition": "Brand New",
     "price": 30000,
-    "oldPrice": 70000,
-    "originalPrice": 70000,
+    "oldPrice": 30000,
+    "originalPrice": 30000,
     "currency": "UGX",
     "stock": 15,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 154,
+    "rating": 4.5,
+    "reviews": 160,
     "images": [
       "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=900&q=80&sig=110"
     ],
@@ -5613,13 +5613,13 @@ window.SURGE_PRODUCTS = [
     "model": "macOS Installation",
     "condition": "Brand New",
     "price": 50000,
-    "oldPrice": 120000,
-    "originalPrice": 120000,
+    "oldPrice": 50000,
+    "originalPrice": 50000,
     "currency": "UGX",
     "stock": 15,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 132,
+    "rating": 4.7,
+    "reviews": 141,
     "images": [
       "https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=900&q=80&sig=111"
     ],
@@ -5663,13 +5663,13 @@ window.SURGE_PRODUCTS = [
     "model": "Data Recovery",
     "condition": "Brand New",
     "price": 60000,
-    "oldPrice": 180000,
-    "originalPrice": 180000,
+    "oldPrice": 60000,
+    "originalPrice": 60000,
     "currency": "UGX",
     "stock": 15,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 90,
+    "reviews": 94,
     "images": [
       "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=900&q=80&sig=112"
     ],
@@ -5713,13 +5713,13 @@ window.SURGE_PRODUCTS = [
     "model": "Keyboard Replacement",
     "condition": "Brand New",
     "price": 70000,
-    "oldPrice": 180000,
-    "originalPrice": 180000,
+    "oldPrice": 70000,
+    "originalPrice": 70000,
     "currency": "UGX",
     "stock": 15,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 58,
+    "rating": 4.7,
+    "reviews": 64,
     "images": [
       "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80&sig=113"
     ],
@@ -5763,13 +5763,13 @@ window.SURGE_PRODUCTS = [
     "model": "Screen Replacement",
     "condition": "Brand New",
     "price": 120000,
-    "oldPrice": 450000,
-    "originalPrice": 450000,
+    "oldPrice": 120000,
+    "originalPrice": 120000,
     "currency": "UGX",
     "stock": 15,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 73,
+    "rating": 4.8,
+    "reviews": 63,
     "images": [
       "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=900&q=80&sig=114"
     ],
@@ -5813,13 +5813,13 @@ window.SURGE_PRODUCTS = [
     "model": "Battery Replacement",
     "condition": "Brand New",
     "price": 80000,
-    "oldPrice": 300000,
-    "originalPrice": 300000,
+    "oldPrice": 80000,
+    "originalPrice": 80000,
     "currency": "UGX",
     "stock": 15,
     "status": "In Stock",
-    "rating": 4.6,
-    "reviews": 72,
+    "rating": 4.5,
+    "reviews": 55,
     "images": [
       "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=900&q=80&sig=115"
     ],
@@ -5863,13 +5863,13 @@ window.SURGE_PRODUCTS = [
     "model": "General Diagnosis",
     "condition": "Brand New",
     "price": 20000,
-    "oldPrice": 50000,
-    "originalPrice": 50000,
+    "oldPrice": 20000,
+    "originalPrice": 20000,
     "currency": "UGX",
     "stock": 15,
     "status": "In Stock",
     "rating": 4.6,
-    "reviews": 47,
+    "reviews": 57,
     "images": [
       "https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=900&q=80&sig=116"
     ],
