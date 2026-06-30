@@ -11,7 +11,7 @@ const SUPABASE_URL = "https://your-project-ref.supabase.co";
 const SUPABASE_ANON_KEY = "your-anon-public-key";
 ```
 
-If those values are empty, the website keeps working with localStorage, `products.json`, and `products-data.js`.
+If those values are empty or Supabase is unavailable, the public website falls back directly to `products-data.js`. Product data is never saved to localStorage.
 
 ## 2. Create Tables
 
@@ -233,7 +233,7 @@ values ('PASTE-AUTH-USER-UUID-HERE')
 on conflict (user_id) do nothing;
 ```
 
-The current frontend does not yet sign into Supabase Auth, so this secure policy needs an auth login step in the admin UI before product writes will work securely.
+The admin page now signs in through Supabase Auth and verifies that the signed-in user exists in `admin_users`. Product writes are rejected unless that secure session is active.
 
 ### Temporary Testing Policy - Unsafe
 
@@ -254,7 +254,7 @@ After testing, remove it:
 drop policy if exists "TEMP anon can manage products" on products;
 ```
 
-## 4. Optional Product Image Storage
+## 4. Product Image Storage
 
 Create a public Supabase Storage bucket named:
 
@@ -262,7 +262,11 @@ Create a public Supabase Storage bucket named:
 product-images
 ```
 
-Allow public read access to images. Restrict upload/update/delete to your admin policy. The admin image manager still supports normal URLs, relative paths like `Images/product.jpg`, and Base64 local previews.
+The current live project does not yet have this bucket. Run the storage section at the end of `supabase-schema.sql`; it creates the public bucket and restricts upload, update, and delete operations to users listed in `admin_users`.
+
+The admin image manager compresses uploads in memory, immediately uploads them to this bucket, and saves only the returned public URL. Base64 image data is never written to product rows or localStorage.
+
+The live database currently contains some legacy Base64 product images. The `storefront_products` view in `supabase-schema.sql` filters those values on the database server, so visitors only download normal image URLs. Re-upload missing legacy images through the admin after creating the bucket.
 
 ## 5. Migrate Local Products
 
@@ -275,7 +279,7 @@ Preferred method:
 5. Click `Migrate Local Products to Supabase`.
 6. Confirm the migrated count and check any failed products shown in the JSON output.
 
-Migration reads `localStorage.surgeAdminProducts`, validates products, preserves the original product id in `local_id`, and does not delete localStorage.
+The website clears obsolete `localStorage.surgeAdminProducts` data on startup to prevent quota errors. Use the bundled catalogue or a JSON backup for the initial migration.
 
 Standalone backup method:
 
@@ -296,4 +300,4 @@ SURGE_SUPABASE_MIGRATION.run()
 5. Edit a product and save it.
 6. Open the storefront in another browser/device and confirm the product appears from Supabase.
 
-If Supabase is down or keys are blank, the site falls back to localStorage, then `products.json`, then `products-data.js`.
+If Supabase is down or keys are blank, the storefront falls back directly to `products-data.js`. It never uses localStorage as a product database.

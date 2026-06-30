@@ -100,6 +100,52 @@ create index if not exists products_slug_idx on products (slug);
 create index if not exists orders_created_at_idx on orders (created_at desc);
 create index if not exists service_inquiries_created_at_idx on service_inquiries (created_at desc);
 
+-- Public catalogue view. It prevents legacy Base64 image strings from being
+-- transferred to storefront visitors while keeping normal image URLs.
+create or replace view storefront_products
+with (security_invoker = true)
+as
+select
+  p.id,
+  p.local_id,
+  p.name,
+  p.slug,
+  p.category,
+  p.subcategory,
+  p.brand,
+  p.model,
+  p.condition,
+  p.price,
+  p.old_price,
+  p.currency,
+  p.stock,
+  p.status,
+  p.rating,
+  p.reviews,
+  coalesce(
+    (
+      select jsonb_agg(image_url)
+      from jsonb_array_elements_text(coalesce(p.images, '[]'::jsonb)) as images_filtered(image_url)
+      where image_url !~* '^data:image/'
+    ),
+    '[]'::jsonb
+  ) as images,
+  p.short_description,
+  p.description,
+  p.specs,
+  p.tags,
+  p.featured,
+  p.top_selling,
+  p.service_group,
+  p.active,
+  p.whatsapp_template,
+  p.created_at,
+  p.updated_at
+from products p
+where p.active = true;
+
+grant select on storefront_products to anon, authenticated;
+
 -- Row Level Security policy starter
 -- The storefront must be public-read only. Product writes require Supabase Auth;
 -- the local admin password in ecommerce.js is not visible to Supabase and does
@@ -166,9 +212,62 @@ to authenticated
 using (exists (select 1 from admin_users where admin_users.user_id = auth.uid()))
 with check (exists (select 1 from admin_users where admin_users.user_id = auth.uid()));
 
+drop policy if exists "Authenticated admins can read service inquiries" on service_inquiries;
+create policy "Authenticated admins can read service inquiries"
+on service_inquiries for select
+to authenticated
+using (exists (select 1 from admin_users where admin_users.user_id = auth.uid()));
+
+drop policy if exists "Authenticated admins can update service inquiries" on service_inquiries;
+create policy "Authenticated admins can update service inquiries"
+on service_inquiries for update
+to authenticated
+using (exists (select 1 from admin_users where admin_users.user_id = auth.uid()))
+with check (exists (select 1 from admin_users where admin_users.user_id = auth.uid()));
+
 drop policy if exists "Authenticated admins can manage site settings" on site_settings;
 create policy "Authenticated admins can manage site settings"
 on site_settings for all
 to authenticated
 using (exists (select 1 from admin_users where admin_users.user_id = auth.uid()))
 with check (exists (select 1 from admin_users where admin_users.user_id = auth.uid()));
+
+insert into storage.buckets (id, name, public)
+values ('product-images', 'product-images', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "Public can read product images" on storage.objects;
+create policy "Public can read product images"
+on storage.objects for select
+using (bucket_id = 'product-images');
+
+drop policy if exists "Authenticated admins can upload product images" on storage.objects;
+create policy "Authenticated admins can upload product images"
+on storage.objects for insert
+to authenticated
+with check (
+  bucket_id = 'product-images'
+  and exists (select 1 from public.admin_users where admin_users.user_id = auth.uid())
+);
+
+drop policy if exists "Authenticated admins can update product images" on storage.objects;
+create policy "Authenticated admins can update product images"
+on storage.objects for update
+to authenticated
+using (
+  bucket_id = 'product-images'
+  and exists (select 1 from public.admin_users where admin_users.user_id = auth.uid())
+)
+with check (
+  bucket_id = 'product-images'
+  and exists (select 1 from public.admin_users where admin_users.user_id = auth.uid())
+);
+
+drop policy if exists "Authenticated admins can delete product images" on storage.objects;
+create policy "Authenticated admins can delete product images"
+on storage.objects for delete
+to authenticated
+using (
+  bucket_id = 'product-images'
+  and exists (select 1 from public.admin_users where admin_users.user_id = auth.uid())
+);

@@ -1,0 +1,14 @@
+.git/
+.github/
+.DS_Store
+**/.DS_Store
+__MACOSX/
+outputs/
+*.pdf
+*.pptx
+*.zip
+SUPABASE_SETUP.md
+supabase-schema.sql
+supabase-migrate-products.js
+image_sources.json
+prepare-netlify.sh

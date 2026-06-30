@@ -1,12 +1,13 @@
 const SurgeStore = (() => {
   const WHATSAPP = "256776036580";
-  const ADMIN_PASSWORD = "Nelly@20";
   const PRODUCTS_KEY = "surgeAdminProducts";
   const RECENT_SEARCHES_KEY = "surgeRecentSearches";
   const SETTINGS_KEY = "surgeSettings";
   const ORDERS_KEY = "surgeOrders";
   const SERVICE_INQUIRIES_KEY = "surgeServiceInquiries";
-  const SUPABASE_CACHE_KEY = "surgeSupabaseProductsCache";
+  const CATEGORY_BATCH_SIZE = 20;
+  const SEARCH_DEBOUNCE_MS = 200;
+  const SUPABASE_TIMEOUT_MS = 9000;
   const SUPABASE_CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
   const SUPABASE_CONFIG = {
     // Paste keys in supabase-config.js. Never use a service role/private key in frontend code.
@@ -50,6 +51,8 @@ const SurgeStore = (() => {
     serviceInquiries: [],
     settings: { ...DEFAULT_SETTINGS },
     supabaseOnline: false,
+    adminAuthenticated: false,
+    adminEmail: "",
     cart: JSON.parse(localStorage.getItem("surgeCart") || "[]"),
     wishlist: JSON.parse(localStorage.getItem("surgeWishlist") || "[]"),
     recent: JSON.parse(localStorage.getItem("surgeRecent") || "[]"),
@@ -66,6 +69,10 @@ const SurgeStore = (() => {
     },
   };
   let supabaseClientPromise = null;
+  let categoryResults = [];
+  let categoryVisible = CATEGORY_BATCH_SIZE;
+  let categoryObserver = null;
+  const searchIndex = new WeakMap();
 
   const parsePrice = (value) => Number(String(value || "").replace(/[^0-9]/g, "")) || 0;
   const money = (value) => `UGX ${Number(value || 0).toLocaleString("en-US")}`;
@@ -96,11 +103,19 @@ const SurgeStore = (() => {
     if (!supabaseReady()) return null;
     if (supabaseClientPromise) return supabaseClientPromise;
     supabaseClientPromise = new Promise((resolve) => {
+      let settled = false;
+      const finish = (client) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        resolve(client);
+      };
+      const timeout = setTimeout(() => finish(null), SUPABASE_TIMEOUT_MS);
       const create = () => {
         try {
-          resolve(window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey));
+          finish(window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey));
         } catch {
-          resolve(null);
+          finish(null);
         }
       };
       if (window.supabase?.createClient) {
@@ -110,11 +125,25 @@ const SurgeStore = (() => {
       const script = document.createElement("script");
       script.src = SUPABASE_CDN;
       script.onload = create;
-      script.onerror = () => resolve(null);
+      script.onerror = () => finish(null);
       (document.head || document.body).appendChild(script);
     });
     return supabaseClientPromise;
   };
+  const withTimeout = (request, label = "Supabase request") =>
+    new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error(`${label} timed out`)), SUPABASE_TIMEOUT_MS);
+      Promise.resolve(request).then(
+        (value) => {
+          clearTimeout(timeout);
+          resolve(value);
+        },
+        (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        },
+      );
+    });
   const loadSettings = () => {
     try {
       state.settings = { ...DEFAULT_SETTINGS, ...state.settings, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") };
@@ -127,6 +156,15 @@ const SurgeStore = (() => {
   const validImageSrc = (src) => {
     const value = String(src || "").trim();
     return value && !/^(javascript:|#)/i.test(value);
+  };
+  const isDataImageSrc = (src) => /^data:image\//i.test(String(src || "").trim());
+  const clearHeavyProductStorage = () => {
+    try {
+      localStorage.removeItem(PRODUCTS_KEY);
+      localStorage.removeItem("surgeSupabaseProductsCache");
+    } catch (error) {
+      console.warn("Could not clear old product storage cache.", error);
+    }
   };
   const imageFor = (product) => {
     const first = Array.isArray(product?.images) ? product.images.find(validImageSrc) : "";
@@ -251,8 +289,30 @@ const SurgeStore = (() => {
   };
   const normalizeSearchText = (value) => String(value || "").toLowerCase().trim().replace(/\s+/g, " ");
   const compactSearchText = (value) => normalizeSearchText(value).replace(/[^a-z0-9]+/g, "");
-  const productSearchText = (product) =>
-    normalizeSearchText([
+  const withinOneEdit = (left, right) => {
+    if (Math.abs(left.length - right.length) > 1) return false;
+    let i = 0;
+    let j = 0;
+    let edits = 0;
+    while (i < left.length && j < right.length) {
+      if (left[i] === right[j]) {
+        i += 1;
+        j += 1;
+        continue;
+      }
+      edits += 1;
+      if (edits > 1) return false;
+      if (left.length > right.length) i += 1;
+      else if (right.length > left.length) j += 1;
+      else {
+        i += 1;
+        j += 1;
+      }
+    }
+    return edits + Number(i < left.length || j < right.length) <= 1;
+  };
+  const buildProductSearchIndex = (product) => {
+    const text = normalizeSearchText([
       product?.name,
       product?.brand,
       product?.model,
@@ -264,15 +324,23 @@ const SurgeStore = (() => {
       (product?.tags || []).join(" "),
       specList(product).join(" "),
     ].join(" "));
+    const index = {
+      text,
+      compact: compactSearchText(text),
+      name: normalizeSearchText(product?.name),
+      model: normalizeSearchText(product?.model),
+      tags: normalizeSearchText((product?.tags || []).join(" ")),
+      tokens: [...new Set(text.split(" ").map(compactSearchText).filter((token) => token.length >= 3))],
+    };
+    searchIndex.set(product, index);
+    return index;
+  };
+  const productSearchIndex = (product) => searchIndex.get(product) || buildProductSearchIndex(product);
   const productSearchScore = (product, query) => {
     const normalizedQuery = normalizeSearchText(query);
     if (!normalizedQuery) return 1;
     const compactQuery = compactSearchText(normalizedQuery);
-    const name = normalizeSearchText(product?.name);
-    const model = normalizeSearchText(product?.model);
-    const tags = normalizeSearchText((product?.tags || []).join(" "));
-    const haystack = productSearchText(product);
-    const compactHaystack = compactSearchText(haystack);
+    const { name, model, tags, text: haystack, compact: compactHaystack, tokens } = productSearchIndex(product);
     const words = normalizedQuery.split(" ").filter(Boolean);
     let score = 0;
     if (name === normalizedQuery || model === normalizedQuery) score += 120;
@@ -286,6 +354,7 @@ const SurgeStore = (() => {
       if (name.includes(word) || model.includes(word)) score += 12;
       else if (tags.includes(word)) score += 8;
       else if (haystack.includes(word) || (compactWord && compactHaystack.includes(compactWord))) score += 4;
+      else if (compactWord.length >= 4 && tokens.some((token) => withinOneEdit(compactWord, token))) score += 2;
       else return 0;
     }
     return score;
@@ -293,21 +362,33 @@ const SurgeStore = (() => {
   const productMatchesSearch = (product, query) => {
     return productSearchScore(product, query) > 0;
   };
+  const debounce = (callback, delay = SEARCH_DEBOUNCE_MS) => {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => callback(...args), delay);
+    };
+  };
   const normalizeCategory = (value) => ({ phones: "phones", phone: "phones", laptops: "laptops", laptop: "laptops", macbooks: "macbooks", macbook: "macbooks", accessories: "accessories", accessory: "accessories", services: "services", service: "services" }[categoryKey(value)] || categoryKey(value));
   const titleCase = (value) => String(value || "").replace(/\b\w/g, (char) => char.toUpperCase());
   const statusForStock = (stock) => Number(stock || 0) <= 0 ? "Out of Stock" : Number(stock || 0) <= 3 ? "Low Stock" : "In Stock";
   const allowedCategories = ["phones", "laptops", "macbooks", "accessories", "services"];
-  const loadLocalAdminProducts = () => {
-    try {
-      const data = JSON.parse(localStorage.getItem(PRODUCTS_KEY) || "null");
-      const products = Array.isArray(data) ? data : Array.isArray(data?.products) ? data.products : [];
-      return products.length ? normalizeProducts(products) : [];
-    } catch (error) {
-      console.warn("Could not read local admin products.", error);
-      return [];
-    }
+  const isPlaceholderProduct = (product) =>
+    normalizeSearchText(product?.name) === "new product" &&
+    /^new-product/i.test(String(product?.localId || product?.id || product?.slug || ""));
+  const dedupeProducts = (products) => {
+    const seen = new Set();
+    let keptPlaceholder = false;
+    return normalizeProducts(products).filter((product) => {
+      const key = product.dbId || product.localId || product.id;
+      if (key && seen.has(key)) return false;
+      if (key) seen.add(key);
+      if (!isPlaceholderProduct(product)) return true;
+      if (keptPlaceholder) return false;
+      keptPlaceholder = true;
+      return true;
+    });
   };
-  const hasLocalAdminProducts = () => loadLocalAdminProducts().length > 0;
   const productsForPage = (category, products = storefrontProducts()) => {
     if (category === "all") return products;
     return products.filter((product) => product.category === category);
@@ -348,7 +429,7 @@ const SurgeStore = (() => {
       status: product.status || statusForStock(stock),
       rating: Number(product.rating || 4.5),
       reviews: Number(product.reviews || 0),
-      images: (Array.isArray(product.images) ? product.images : product.image ? [product.image] : []).map((item) => String(item || "").trim()).filter(validImageSrc),
+      images: (Array.isArray(product.images) ? product.images : product.image ? [product.image] : []).map((item) => String(item || "").trim()).filter((item) => validImageSrc(item) && !isDataImageSrc(item)),
       colors: Array.isArray(product.colors) ? product.colors : [],
       badge: product.badge || "",
       shortDescription: product.shortDescription || product.description || "Available from Surge Tech UG.",
@@ -426,7 +507,7 @@ const SurgeStore = (() => {
       description: normalized.description,
       specs,
       tags: normalized.tags || [],
-      images: Array.isArray(normalized.images) ? normalized.images.filter(validImageSrc) : [],
+      images: Array.isArray(normalized.images) ? normalized.images.filter((item) => validImageSrc(item) && !isDataImageSrc(item)) : [],
       featured: Boolean(normalized.featured),
       top_selling: Boolean(normalized.topSelling),
       service_group: normalized.serviceGroup || "",
@@ -442,53 +523,41 @@ const SurgeStore = (() => {
     const supabase = await loadSupabaseClient();
     if (supabase) {
       try {
-        let query = supabase.from("products").select("*").order("created_at", { ascending: false });
-        if (!includeInactive) query = query.eq("active", true);
-        const { data, error } = await query;
+        const queryProducts = (table) => {
+          let query = supabase.from(table).select("*").order("created_at", { ascending: false });
+          if (!includeInactive) query = query.eq("active", true);
+          return query;
+        };
+        let result = await withTimeout(
+          queryProducts(includeInactive ? "products" : "storefront_products"),
+          "Product database request",
+        );
+        if (result.error && !includeInactive) {
+          console.warn("Sanitized product view is unavailable. Reading the products table directly.", result.error);
+          result = await withTimeout(queryProducts("products"), "Product database fallback request");
+        }
+        const { data, error } = result;
         if (error) throw error;
         products = (data || []).map(rowToProduct);
         state.supabaseOnline = true;
         if (products.length) {
           productSource = "supabase";
-          localStorage.setItem(SUPABASE_CACHE_KEY, JSON.stringify(products));
           console.info("Surge products loaded from Supabase.");
         } else {
-          console.warn("Supabase returned no products. Falling back to localStorage/products.json backup.");
+          console.warn("Supabase returned no products. Falling back to products-data.js.");
         }
       } catch (error) {
         state.supabaseOnline = false;
-        console.warn("Supabase product load failed. Falling back to localStorage.", error);
-      }
-    }
-    if (!products.length) {
-      const localProducts = loadLocalAdminProducts();
-      if (localProducts.length) {
-        products = localProducts;
-        productSource = "localStorage";
-        console.info("Surge products loaded from localStorage.");
+        console.warn("Supabase product load failed. Falling back to products-data.js.", error);
       }
     }
     if (!products.length && Array.isArray(window.SURGE_PRODUCTS) && window.SURGE_PRODUCTS.length) {
       products = window.SURGE_PRODUCTS;
       productSource = "products-data.js";
-      console.info("Surge products loaded from products-data.js.");
+      console.info("Surge products loaded from products-data.js backup.");
     }
-    if (!products.length) {
-      try {
-        const response = await fetch("products.json");
-        const data = await response.json();
-        if (Array.isArray(data.products)) products = data.products;
-        else if (Array.isArray(data)) products = data;
-        productSource = "products.json";
-        console.info("Surge products loaded from products.json.");
-      } catch (error) {
-        console.warn("products.json load failed. Falling back to products-data.js.", error);
-        products = Array.isArray(window.SURGE_PRODUCTS) ? window.SURGE_PRODUCTS : [];
-        productSource = "products-data.js";
-        console.info("Surge products loaded from products-data.js fallback.");
-      }
-    }
-    state.products = normalizeProducts(products);
+    state.products = dedupeProducts(products);
+    state.products.forEach(buildProductSearchIndex);
     console.info("Surge admin/catalog product source", {
       source: productSource || "none",
       count: state.products.length,
@@ -499,11 +568,66 @@ const SurgeStore = (() => {
     return state.products;
   }
 
+  async function checkAdminAuth() {
+    const supabase = await loadSupabaseClient();
+    if (!supabase) {
+      state.adminAuthenticated = false;
+      state.adminEmail = "";
+      return false;
+    }
+    try {
+      const { data: sessionData, error: sessionError } = await withTimeout(supabase.auth.getSession(), "Admin session request");
+      if (sessionError) throw sessionError;
+      const user = sessionData?.session?.user;
+      if (!user) {
+        state.adminAuthenticated = false;
+        state.adminEmail = "";
+        return false;
+      }
+      const { data, error } = await withTimeout(
+        supabase.from("admin_users").select("user_id").eq("user_id", user.id).maybeSingle(),
+        "Admin authorization request",
+      );
+      if (error) throw error;
+      state.adminAuthenticated = Boolean(data?.user_id);
+      state.adminEmail = state.adminAuthenticated ? (user.email || "") : "";
+      return state.adminAuthenticated;
+    } catch (error) {
+      state.adminAuthenticated = false;
+      state.adminEmail = "";
+      console.warn("Supabase admin session check failed.", error);
+      return false;
+    }
+  }
+
+  async function signInAdmin(email, password) {
+    const supabase = await loadSupabaseClient();
+    if (!supabase) throw new Error("Supabase is unavailable. Check the project URL, anon key, and internet connection.");
+    const { error } = await withTimeout(
+      supabase.auth.signInWithPassword({ email: String(email || "").trim(), password: String(password || "") }),
+      "Admin sign-in request",
+    );
+    if (error) throw error;
+    if (!(await checkAdminAuth())) {
+      await supabase.auth.signOut();
+      throw new Error("This Supabase account is not listed in admin_users.");
+    }
+    clearHeavyProductStorage();
+    return true;
+  }
+
+  async function signOutAdmin() {
+    const supabase = await loadSupabaseClient();
+    if (supabase) await supabase.auth.signOut();
+    state.adminAuthenticated = false;
+    state.adminEmail = "";
+  }
+
   function saveAdminProducts(products) {
-    state.products = normalizeProducts(products);
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(state.products));
-    localStorage.setItem(SUPABASE_CACHE_KEY, JSON.stringify(state.products));
+    state.products = dedupeProducts(products);
+    state.products.forEach(buildProductSearchIndex);
     window.SURGE_ACTIVE_PRODUCTS = state.products;
+    clearHeavyProductStorage();
     state.cart = state.cart.filter((item) => productById(item.id));
     state.wishlist = state.wishlist.filter((id) => productById(id));
     save();
@@ -515,9 +639,16 @@ const SurgeStore = (() => {
   async function saveAdminProduct(product) {
     const normalized = normalizeProducts([product])[0];
     if (!normalized?.id) throw new Error("Product is missing a stable product ID.");
+    if ((product.images || []).some(isDataImageSrc)) {
+      throw new Error("Product images must be saved as URLs. Please upload images to Supabase Storage or paste image URLs before saving.");
+    }
     const duplicate = state.products.find((item) => item.id === normalized.id && item.localId !== normalized.localId && item.dbId !== normalized.dbId);
     if (duplicate) throw new Error(`Product ID "${normalized.id}" is already used by ${duplicate.name}. Please choose a unique Product ID.`);
     const supabase = await loadSupabaseClient();
+    if (!supabase) throw new Error("Supabase is not configured. Product changes are not saved to browser storage anymore; add Supabase URL and anon key before saving products.");
+    if (!state.adminAuthenticated && !(await checkAdminAuth())) {
+      throw new Error("Your Supabase admin session has expired. Sign in again before saving.");
+    }
     if (supabase) {
       const row = productToSupabaseRow(normalized);
       let data = [];
@@ -602,28 +733,20 @@ const SurgeStore = (() => {
       saveAdminProducts([saved, ...rest]);
       return saved;
     }
-    const rest = state.products.filter((item) => item.id !== normalized.id);
-    saveAdminProducts([normalized, ...rest]);
-    return normalized;
   }
 
   async function deactivateAdminProduct(product) {
-    const supabase = await loadSupabaseClient();
-    if (supabase && product?.dbId) {
-      const { error } = await supabase.from("products").update({ active: false, updated_at: new Date().toISOString() }).eq("id", product.dbId);
-      if (error) throw error;
-      state.supabaseOnline = true;
-    }
-    saveAdminProducts(state.products.map((item) => item.id === product.id ? { ...item, active: false, updatedAt: todayStamp() } : item));
+    if (!product) throw new Error("Product not found.");
+    return saveAdminProduct({ ...product, active: false, updatedAt: todayStamp() });
   }
 
   function resetAdminProducts(confirmed = false) {
     if (!confirmed) {
-      console.warn("Reset blocked. Export local products first and confirm from the admin reset button.");
+      console.warn("Reload blocked until confirmed from the admin button.");
       return Promise.resolve(state.products);
     }
-    localStorage.removeItem(PRODUCTS_KEY);
-    return loadProducts(document.querySelector('[data-page="admin"]'));
+    clearHeavyProductStorage();
+    return loadProducts(Boolean(document.querySelector('[data-page="admin"]')));
   }
 
   function toast(message) {
@@ -686,7 +809,7 @@ const SurgeStore = (() => {
     toast(state.wishlist.includes(id) ? "Saved to wishlist" : "Removed from wishlist");
   }
 
-  function productCard(product) {
+  function productCard(product, options = {}) {
     const discount = discountFor(product);
     const activeWish = state.wishlist.includes(product.id) ? "active" : "";
     const fallback = imageFallbackFor(product);
@@ -694,7 +817,7 @@ const SurgeStore = (() => {
       <article class="product-card ${product.category === "services" ? "service-card" : ""}">
         <button class="wishlist-btn ${activeWish}" data-wish="${product.id}" onclick="event.stopPropagation(); SurgeStore.toggleWishlist('${product.id}')" aria-label="Save ${product.name}">♡</button>
         <a class="product-media" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View ${product.name}">
-          <img loading="lazy" src="${imageFor(product)}" onerror="this.onerror=null;this.src='${fallback}'" alt="${product.name}">
+          <img loading="${options.eager ? "eager" : "lazy"}" decoding="async" width="320" height="320" src="${imageFor(product)}" onerror="this.onerror=null;this.src='${fallback}'" alt="${product.name}">
           ${discount ? `<span class="discount-tag">-${discount}%</span>` : ""}
           <span class="stock-pill">${(product.stock || 0) > 0 ? "In stock" : "Pre-order"}</span>
         </a>
@@ -732,7 +855,7 @@ const SurgeStore = (() => {
       <header class="site-header">
         <div class="st-container header-main">
           <button class="hamburger" data-mobile-menu-button aria-label="Open menu">☰</button>
-          <a class="brand" href="index.html"><img class="brand-logo" src="Images/Surgetech%20logo.png" alt="Surge Tech UG logo"><span class="brand-name">Surge Tech<small>Premium tech store</small></span></a>
+          <a class="brand" href="index.html"><img class="brand-logo" decoding="async" fetchpriority="high" width="2100" height="1500" src="Images/Surgetech%20logo.png" alt="Surge Tech UG logo"><span class="brand-name">Surge Tech<small>Premium tech store</small></span></a>
           <select class="category-select" data-category-jump aria-label="Category">
             <option value="index.html">All Categories</option>
             <option value="Phones.html">Phones</option>
@@ -829,7 +952,7 @@ const SurgeStore = (() => {
           if (!product) return "";
           return `
             <div class="cart-line">
-              <img src="${imageFor(product)}" onerror="this.onerror=null;this.src='${imageFallbackFor(product)}'" alt="${product.name}">
+              <img loading="lazy" decoding="async" width="72" height="72" src="${imageFor(product)}" onerror="this.onerror=null;this.src='${imageFallbackFor(product)}'" alt="${product.name}">
               <div>
                 <h4>${product.name}</h4>
                 <strong>${money(parsePrice(product.price) * item.qty)}</strong>
@@ -873,9 +996,10 @@ const SurgeStore = (() => {
     return output;
   }
 
-  function renderGrid(element, items) {
+  function renderGrid(element, items, limit = items.length) {
+    const visibleItems = items.slice(0, limit);
     element.innerHTML = items.length
-      ? items.map(productCard).join("")
+      ? `${visibleItems.map(productCard).join("")}${visibleItems.length < items.length ? `<div class="product-load-more"><button class="btn-secondary" type="button" data-load-more>View More Products</button><small>Showing ${visibleItems.length} of ${items.length}</small></div>` : ""}`
       : `<div class="empty-state"><h3>No products found</h3><p>Try changing your search or filters.</p></div>`;
   }
 
@@ -913,13 +1037,48 @@ const SurgeStore = (() => {
         <aside class="promo-card"><span class="eyebrow">Today only</span><h3>Order by WhatsApp or cart</h3><p>Ask for availability, delivery and warranty before you buy.</p><a class="btn-whatsapp" href="${whatsAppLink()}" target="_blank" rel="noopener">Chat now</a></aside>
       </div>
       <div class="trust-strip"><div>Fast delivery</div><div>Warranty support</div><div>Secure payment</div><div>Tested gadgets</div></div>
-      ${collection("Flash Sales", flashProducts, "accessories.html")}
-      ${collection("Top Phones", products.filter((product) => product.category === "phones").slice(0, 10), "Phones.html")}
-      ${collection("Laptops and MacBooks", products.filter((product) => ["laptops", "macbooks"].includes(product.category)).slice(0, 10), "Laptops.html")}
-      ${collection("Accessories", products.filter((product) => product.category === "accessories").slice(0, 10), "accessories.html")}
+      ${homeCollectionShell("Flash Sales", "accessories.html", "flash")}
+      ${homeCollectionShell("Top Phones", "Phones.html", "phones")}
+      ${homeCollectionShell("Laptops and MacBooks", "Laptops.html", "computers")}
+      ${homeCollectionShell("Accessories", "accessories.html", "accessories")}
       <section class="section stats"><div class="stat"><strong>500+</strong>Customers served</div><div class="stat"><strong>4.8</strong>Average rating</div><div class="stat"><strong>24h</strong>Support response</div><div class="stat"><strong>6</strong>Core services</div></section>
     `;
+    hydrateHomeCollections(root, {
+      flash: flashProducts.slice(0, 5),
+      phones: products.filter((product) => product.category === "phones").slice(0, 5),
+      computers: products.filter((product) => ["laptops", "macbooks"].includes(product.category)).slice(0, 5),
+      accessories: products.filter((product) => product.category === "accessories").slice(0, 5),
+    });
     startHero();
+  }
+
+  function homeCollectionShell(title, href, key) {
+    return `<section class="section deferred-collection" data-home-collection="${key}"><div class="section-head"><h2>${title}</h2><a href="${href}">See all</a></div><div class="product-grid" aria-busy="true"></div></section>`;
+  }
+
+  function hydrateHomeCollections(root, collections) {
+    const renderSection = (section) => {
+      if (!section || section.dataset.rendered) return;
+      const items = collections[section.dataset.homeCollection] || [];
+      const grid = section.querySelector(".product-grid");
+      grid.innerHTML = items.map(productCard).join("");
+      grid.removeAttribute("aria-busy");
+      section.dataset.rendered = "true";
+    };
+    const sections = [...root.querySelectorAll("[data-home-collection]")];
+    renderSection(sections[0]);
+    if (!("IntersectionObserver" in window)) {
+      sections.slice(1).forEach(renderSection);
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        renderSection(entry.target);
+        observer.unobserve(entry.target);
+      });
+    }, { rootMargin: "500px 0px" });
+    sections.slice(1).forEach((section) => observer.observe(section));
   }
 
   function collection(title, items, href) {
@@ -948,11 +1107,14 @@ const SurgeStore = (() => {
         <main><div class="section-head"><h2>${title}</h2></div><button class="filter-toggle" type="button" data-filter-toggle>Filter & Sort</button><div class="product-grid" data-category-grid></div></main>
       </div>
     `;
-    document.querySelectorAll("[data-filter]").forEach((input) => {
-      input.addEventListener("input", () => {
+    const updateFilter = (input) => {
         state.filters[input.dataset.filter] = input.type === "checkbox" ? input.checked : input.value;
         refreshCategory();
-      });
+    };
+    const updateSearchFilter = debounce((input) => updateFilter(input));
+    document.querySelectorAll("[data-filter]").forEach((input) => {
+      if (input.dataset.filter === "query") input.addEventListener("input", () => updateSearchFilter(input));
+      else input.addEventListener("change", () => updateFilter(input));
     });
     document.querySelector("[data-filter-toggle]")?.addEventListener("click", () => {
       document.querySelector(".filter-panel")?.classList.add("open");
@@ -970,8 +1132,28 @@ const SurgeStore = (() => {
   function refreshCategory() {
     const grid = document.querySelector("[data-category-grid]");
     if (!grid) return;
-    const results = filterProducts(productsForPage(state.filters.category));
-    renderGrid(grid, results);
+    categoryResults = filterProducts(productsForPage(state.filters.category));
+    categoryVisible = CATEGORY_BATCH_SIZE;
+    renderGrid(grid, categoryResults, categoryVisible);
+    observeCategoryLoadMore();
+  }
+
+  function showMoreCategoryProducts() {
+    const grid = document.querySelector("[data-category-grid]");
+    if (!grid || categoryVisible >= categoryResults.length) return;
+    categoryVisible += CATEGORY_BATCH_SIZE;
+    renderGrid(grid, categoryResults, categoryVisible);
+    observeCategoryLoadMore();
+  }
+
+  function observeCategoryLoadMore() {
+    categoryObserver?.disconnect();
+    const button = document.querySelector("[data-load-more]");
+    if (!button || !("IntersectionObserver" in window)) return;
+    categoryObserver = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) showMoreCategoryProducts();
+    }, { rootMargin: "300px 0px" });
+    categoryObserver.observe(button);
   }
 
   function renderProduct(root) {
@@ -990,7 +1172,7 @@ const SurgeStore = (() => {
     root.innerHTML = `
       <nav class="section"><a href="index.html">Home</a> / <a href="${categoryHref(product.category)}">${titleFor(product.category)}</a> / ${product.name}</nav>
       <div class="detail-layout">
-        <div><div class="gallery-main"><img data-main-img src="${galleryImages[0]}" onerror="this.onerror=null;this.src='${fallback}'" alt="${product.name}"></div><div class="gallery-thumbs">${galleryImages.map((src, index) => `<button class="${index === 0 ? "active" : ""}" data-thumb="${src}"><img src="${src}" onerror="this.onerror=null;this.src='${fallback}'" alt="${product.name} thumbnail ${index + 1}"></button>`).join("")}</div>${galleryImages.length === 1 ? '<p class="gallery-note">More photos can be shared on WhatsApp before purchase.</p>' : ''}</div>
+        <div><div class="gallery-main"><img data-main-img decoding="async" width="700" height="700" src="${galleryImages[0]}" onerror="this.onerror=null;this.src='${fallback}'" alt="${product.name}"></div><div class="gallery-thumbs">${galleryImages.map((src, index) => `<button class="${index === 0 ? "active" : ""}" data-thumb="${src}"><img loading="lazy" decoding="async" width="80" height="80" src="${src}" onerror="this.onerror=null;this.src='${fallback}'" alt="${product.name} thumbnail ${index + 1}"></button>`).join("")}</div>${galleryImages.length === 1 ? '<p class="gallery-note">More photos can be shared on WhatsApp before purchase.</p>' : ''}</div>
         <div class="detail-card">
           <span class="eyebrow">${(product.brand || "Surge Tech").toUpperCase()}</span><h1>${product.name}</h1>
           <div class="rating">${stars(product.rating)} (${product.reviews || 0} reviews)</div><div class="stock">${(product.stock || 0) > 0 ? "Available now" : "Pre-order"} · ${product.condition}</div>
@@ -1070,7 +1252,7 @@ const SurgeStore = (() => {
     const fallback = imageFallbackFor(service);
     return `
       <article class="service-tile" data-service-chat="${service.id}" data-service-group="${service.serviceGroup || "design"}">
-        <div class="service-icon"><img loading="lazy" src="${imageFor(service)}" onerror="this.onerror=null;this.src='${fallback}'" alt="${service.name}"></div>
+        <div class="service-icon"><img loading="lazy" decoding="async" width="240" height="240" src="${imageFor(service)}" onerror="this.onerror=null;this.src='${fallback}'" alt="${service.name}"></div>
         <div class="service-copy">
           <span>${group}</span>
           <h3>${service.name}</h3>
@@ -1373,7 +1555,10 @@ const SurgeStore = (() => {
 
   async function uploadProductImage(dataUrl, fileName = "product-image.jpg") {
     const supabase = await loadSupabaseClient();
-    if (!supabase || !SUPABASE_CONFIG.storageBucket || !String(dataUrl || "").startsWith("data:image/")) return dataUrl;
+    if (!String(dataUrl || "").startsWith("data:image/")) return dataUrl;
+    if (!supabase || !SUPABASE_CONFIG.storageBucket) {
+      throw new Error("Supabase Storage is not configured. Paste an image URL instead of uploading a file.");
+    }
     const safeName = slugify(fileName.replace(/\.[^.]+$/, "")) || "product-image";
     const path = `${Date.now()}-${safeName}.jpg`;
     const { error } = await supabase.storage.from(SUPABASE_CONFIG.storageBucket).upload(path, dataUrlToBlob(dataUrl), {
@@ -1382,7 +1567,8 @@ const SurgeStore = (() => {
     });
     if (error) throw error;
     const { data } = supabase.storage.from(SUPABASE_CONFIG.storageBucket).getPublicUrl(path);
-    return data.publicUrl || dataUrl;
+    if (!data.publicUrl) throw new Error("Supabase Storage did not return a public image URL.");
+    return data.publicUrl;
   }
 
   function initAdminImageManager(form) {
@@ -1399,7 +1585,7 @@ const SurgeStore = (() => {
     const sync = () => {
       textarea.value = images.join("\n");
       list.innerHTML = images.length
-        ? images.map((src, index) => `<div class="admin-image-item"><img src="${src}" alt="Product image ${index + 1}"><span>${index === 0 ? "Main image" : "Image " + (index + 1)}</span><div><button type="button" data-image-up="${index}" ${index === 0 ? "disabled" : ""}>Up</button><button type="button" data-image-down="${index}" ${index === images.length - 1 ? "disabled" : ""}>Down</button><button type="button" data-image-remove="${index}">Remove</button></div></div>`).join("")
+        ? images.map((src, index) => `<div class="admin-image-item"><img loading="lazy" decoding="async" width="240" height="240" src="${src}" alt="Product image ${index + 1}"><span>${index === 0 ? "Main image" : "Image " + (index + 1)}</span><div><button type="button" data-image-up="${index}" ${index === 0 ? "disabled" : ""}>Up</button><button type="button" data-image-down="${index}" ${index === images.length - 1 ? "disabled" : ""}>Down</button><button type="button" data-image-remove="${index}">Remove</button></div></div>`).join("")
         : `<div class="admin-image-empty">No product images yet. Upload one or add an online URL.</div>`;
     };
     const setWarning = (message) => {
@@ -1412,13 +1598,12 @@ const SurgeStore = (() => {
       setWarning("");
       for (const file of incoming) {
         try {
-          if (file.size > 1800000) setWarning("Large image compressed before saving. Very large Base64 images can fill browser storage quickly.");
+          if (file.size > 1800000) setWarning("Large image compressed before upload.");
           const result = await compressImageFile(file);
           try {
             images.push(await uploadProductImage(result.src, file.name));
-          } catch {
-            setWarning("Image kept in this browser because Supabase Storage upload failed. Check bucket and policies.");
-            images.push(result.src);
+          } catch (uploadError) {
+            setWarning(uploadError.message || "Image upload failed. Please check Supabase Storage or paste an image URL.");
           }
         } catch (error) {
           setWarning(error.message || "Could not process one image.");
@@ -1498,36 +1683,16 @@ const SurgeStore = (() => {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  async function copyJson(data) {
-    const text = JSON.stringify(data, null, 2);
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-    const textarea = document.createElement("textarea");
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    const copied = document.execCommand?.("copy");
-    textarea.remove();
-    return Boolean(copied);
-  }
-
   async function migrateLocalProductsToSupabase() {
-    const localProducts = loadLocalAdminProducts();
-    let source = "localStorage";
-    let sourceProducts = localProducts;
-    if (!sourceProducts.length) {
-      source = "current admin catalogue";
-      sourceProducts = normalizeProducts(state.products);
-    }
+    let source = "current admin catalogue";
+    let sourceProducts = normalizeProducts(state.products);
     if (!sourceProducts.length) {
       source = "products.json/products-data.js";
       sourceProducts = await productsJsonFallback();
     }
     if (!sourceProducts.length) throw new Error("No products found to migrate. Restore a backup or load products.json first.");
-    if (!confirm("Please export a local backup first. Migration will not delete your local products. Continue?")) {
-      throw new Error("Migration cancelled. Export a local backup first.");
+    if (!confirm(`Migrate ${sourceProducts.length} products from ${source} directly to Supabase?`)) {
+      throw new Error("Migration cancelled.");
     }
     const supabase = await loadSupabaseClient();
     if (!supabase) throw new Error("Add your Supabase URL and anon key before migrating.");
@@ -1593,9 +1758,25 @@ const SurgeStore = (() => {
   }
 
   function renderAdmin(root) {
-    if (sessionStorage.getItem("surgeAdminAuth") !== "true") {
-      root.innerHTML = '<section class="page-hero"><h1>Admin Dashboard</h1><p>Enter the admin password to manage Surge Tech UG products.</p></section><section class="section admin-login"><form data-admin-login><h2>Admin login</h2><input type="password" name="password" placeholder="Password" required><button class="btn-primary" type="submit">Unlock Admin</button><p class="admin-note">Temporary local password protection for product editing.</p></form></section>';
-      root.querySelector("[data-admin-login]").addEventListener("submit", (event) => { event.preventDefault(); if (new FormData(event.currentTarget).get("password") === ADMIN_PASSWORD) { sessionStorage.setItem("surgeAdminAuth", "true"); renderAdmin(root); } else toast("Incorrect admin password"); });
+    if (!state.adminAuthenticated) {
+      root.innerHTML = '<section class="page-hero"><h1>Admin Dashboard</h1><p>Sign in with your authorized Supabase admin account.</p></section><section class="section admin-login"><form data-admin-login><h2>Secure admin login</h2><input type="email" name="email" autocomplete="username" placeholder="Admin email" required><input type="password" name="password" autocomplete="current-password" placeholder="Password" required><button class="btn-primary" type="submit">Sign in to Supabase</button><p class="admin-note">Product changes are written directly to Supabase. They are never saved in browser storage.</p></form></section>';
+      root.querySelector("[data-admin-login]").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const button = event.currentTarget.querySelector('button[type="submit"]');
+        const data = new FormData(event.currentTarget);
+        button.disabled = true;
+        button.textContent = "Signing in...";
+        try {
+          await signInAdmin(data.get("email"), data.get("password"));
+          await Promise.all([loadSettingsOnline(), loadProducts(true), loadOrdersOnline(), loadServiceInquiriesOnline()]);
+          renderAdmin(root);
+          toast("Signed in to Supabase");
+        } catch (error) {
+          toast(error.message || "Could not sign in");
+          button.disabled = false;
+          button.textContent = "Sign in to Supabase";
+        }
+      });
       return;
     }
     let section = "overview";
@@ -1608,26 +1789,26 @@ const SurgeStore = (() => {
     const filtered = () => state.products.filter((p) => productMatchesSearch(p, filters.query) && (filters.category === "all" || p.category === filters.category) && (filters.brand === "all" || p.brand === filters.brand) && (filters.status === "all" || productStatus(p) === filters.status) && (filters.condition === "all" || p.condition === filters.condition));
     const statData = () => { const orders = loadOrders(); return [["Total products", state.products.length], ["Total categories", new Set(state.products.map((p) => p.category)).size], ["Total stock items", state.products.reduce((a, p) => a + Number(p.stock || 0), 0)], ["Out of stock products", state.products.filter((p) => Number(p.stock || 0) <= 0).length], ["Low stock products", state.products.filter((p) => Number(p.stock || 0) > 0 && Number(p.stock || 0) <= 3).length], ["Total orders", orders.length], ["Pending orders", orders.filter((o) => !o.status || o.status === "Pending").length], ["Service inquiries", loadServiceInquiries().length], ["Estimated stock value", money(state.products.reduce((a, p) => a + productValue(p), 0))]]; };
     const tabs = () => ["overview", "products", "orders", "categories", "services", "settings", "backup"].map((id) => '<button class="' + (section === id ? 'active' : '') + '" data-admin-section="' + id + '">' + titleCase(id) + '</button>').join('');
-    const dbStatus = () => '<section class="admin-panel admin-db-status ' + (supabaseReady() && state.supabaseOnline ? 'online' : 'local') + '"><div><strong>' + (supabaseReady() && state.supabaseOnline ? 'Online Database Connected' : 'Local Mode') + '</strong><p>' + (supabaseReady() && state.supabaseOnline ? 'Product edits update live from Supabase.' : 'Product edits are saved only in this browser. Connect Supabase for live online updates.') + '</p><small data-db-status-output>Supabase config: ' + (supabaseReady() ? 'keys added' : 'not configured') + '</small></div><div class="admin-backup"><button class="btn-secondary" type="button" data-test-supabase>Test Supabase Connection</button><button class="btn-primary" type="button" data-migrate-local-products>Migrate Local Products to Supabase</button><button class="btn-ghost" type="button" data-download-local-products>Export Local Products Backup</button><button class="btn-ghost" type="button" data-export-products>Export products.json</button></div><pre data-export-output></pre></section>';
+    const dbStatus = () => '<section class="admin-panel admin-db-status ' + (supabaseReady() && state.supabaseOnline ? 'online' : 'local') + '"><div><strong>' + (supabaseReady() && state.supabaseOnline ? 'Online Database Connected' : 'Supabase Not Connected') + '</strong><p>' + (supabaseReady() && state.supabaseOnline ? 'Product edits update live from Supabase.' : 'Product saves require a working Supabase connection.') + '</p><small data-db-status-output>Signed in as ' + adminEsc(state.adminEmail || 'Supabase admin') + '</small></div><div class="admin-backup"><button class="btn-secondary" type="button" data-test-supabase>Test Supabase Connection</button><button class="btn-primary" type="button" data-migrate-local-products>Migrate Backup to Supabase</button><button class="btn-ghost" type="button" data-export-products>Export products backup</button><button class="btn-ghost" type="button" data-admin-logout>Sign out</button></div><pre data-export-output></pre></section>';
     const overview = () => '<section class="admin-overview">' + statData().map(([label, value]) => '<article><span>' + label + '</span><strong>' + value + '</strong></article>').join('') + '</section>';
-    const productRows = (items) => items.map((p) => '<tr><td data-label="Image"><img src="' + imageFor(p) + '" alt="' + adminEsc(p.name) + '"></td><td data-label="Name"><strong>' + adminEsc(p.name) + '</strong><small>' + adminEsc(p.model || '') + '</small><small>' + (p.dbId ? 'Supabase row: ' + adminEsc(p.dbId) : 'Local only - not synced') + '</small></td><td data-label="Category">' + titleFor(p.category) + '</td><td data-label="Brand">' + adminEsc(p.brand) + '</td><td data-label="Price">' + displayPrice(p) + '</td><td data-label="Old price">' + displayOldPrice(p) + '</td><td data-label="Stock">' + p.stock + '</td><td data-label="Condition">' + adminEsc(p.condition) + '</td><td data-label="Status"><span class="admin-status ' + productStatus(p).toLowerCase().replace(/\s+/g, '-') + '">' + productStatus(p) + '</span></td><td data-label="Actions"><button type="button" data-edit-product="' + p.id + '">Edit</button><button type="button" data-duplicate-product="' + p.id + '">Duplicate</button><button type="button" data-delete-product="' + p.id + '">Delete</button></td></tr>').join('');
-    const productForm = () => { const p = selected(); const specs = p.specs || {}; return '<form class="admin-editor admin-panel" data-admin-form><input type="hidden" name="localId" value="' + adminEsc(p.localId || p.id || '') + '"><input type="hidden" name="dbId" value="' + adminEsc(p.dbId || '') + '"><input type="hidden" name="source" value="' + adminEsc(p.source || (p.dbId ? 'supabase' : 'local')) + '"><div class="admin-panel-head"><div><h2>Add/Edit Product</h2><p>Editing: <strong>' + adminEsc(p.name || 'New product') + '</strong></p><p class="admin-note">' + (p.dbId ? 'Source: Supabase. Local ID: ' + adminEsc(p.localId || p.id || '') : 'Source: Local only - not synced. Saving will sync by Local ID: ' + adminEsc(p.localId || p.id || '')) + '</p></div><button class="btn-ghost" type="button" data-new-product>New product</button></div><div class="form-grid"><label>Product ID<input name="id" value="' + adminEsc(p.id || '') + '"></label><label>Product name<input name="name" required value="' + adminEsc(p.name || '') + '"></label></div><div class="form-grid"><label>Category<select name="category"><option value="phones">Phones</option><option value="laptops">Laptops</option><option value="macbooks">MacBooks</option><option value="accessories">Accessories</option><option value="services">Services</option></select></label><label>Subcategory<input name="subcategory" value="' + adminEsc(p.subcategory || '') + '"></label></div><div class="form-grid"><label>Brand<input name="brand" value="' + adminEsc(p.brand || '') + '"></label><label>Model<input name="model" value="' + adminEsc(p.model || '') + '"></label></div><div class="form-grid"><label>Badge<input name="badge" value="' + adminEsc(p.badge || '') + '"></label><label>Price<input name="price" value="' + displayPrice(p) + '"></label></div><div class="form-grid"><label>Old price<input name="oldPrice" value="' + displayOldPrice(p) + '"></label><label>Stock quantity<input name="stock" type="number" min="0" value="' + (p.stock ?? 0) + '"></label></div><div class="form-grid"><label>Availability<select name="status"><option>In Stock</option><option>Low Stock</option><option>Out of Stock</option></select></label><label>Condition<select name="condition"><option>Brand New</option><option>Used</option><option>UK Used</option><option>Refurbished</option></select></label></div><div class="form-grid"><label>Service group<select name="serviceGroup"><option value="">Not a service</option><option value="design">Graphic Design</option><option value="repair">Repair</option></select></label></div><label class="admin-image-source">Product images<textarea name="images" rows="3">' + adminEsc((p.images || []).join('\n')) + '</textarea></label><div class="admin-image-manager" data-image-manager><input type="file" accept="image/*" multiple hidden data-image-picker><button class="admin-image-drop" type="button" data-image-drop><strong>Drop product images here</strong><span>or click to upload. Images are resized and saved in this browser.</span></button><div class="admin-image-url-row"><input type="text" data-image-url placeholder="Image URL or relative path, e.g. Images/product.jpg"><button class="btn-ghost" type="button" data-add-image-url>Add URL</button></div><p class="admin-image-warning" data-image-warning hidden></p><div class="admin-image-list" data-image-list></div></div><label>Short description<textarea name="shortDescription" rows="2">' + adminEsc(p.shortDescription || '') + '</textarea></label><label>Full description<textarea name="description" rows="4">' + adminEsc(p.description || '') + '</textarea></label><div class="form-grid"><label>Processor<input name="processor" value="' + adminEsc(specs.processor || '') + '"></label><label>RAM<input name="ram" value="' + adminEsc(specs.ram || '') + '"></label></div><div class="form-grid"><label>Storage<input name="storage" value="' + adminEsc(specs.storage || '') + '"></label><label>Display<input name="display" value="' + adminEsc(specs.display || '') + '"></label></div><div class="form-grid"><label>Graphics<input name="graphics" value="' + adminEsc(specs.graphics || '') + '"></label><label>Battery<input name="battery" value="' + adminEsc(specs.battery || '') + '"></label></div><div class="form-grid"><label>Rating<input name="rating" type="number" min="4.4" max="4.9" step="0.1" value="' + (p.rating || 4.5) + '"></label><label>Reviews<input name="reviews" type="number" min="0" value="' + (p.reviews || 0) + '"></label></div><label>Tags<textarea name="tags" rows="3">' + adminEsc((p.tags || []).join('\n')) + '</textarea></label><label>WhatsApp message template<textarea name="whatsappTemplate" rows="2">' + adminEsc(p.whatsappTemplate || '') + '</textarea></label><div class="admin-checks"><label><input name="featured" type="checkbox" ' + (p.featured ? 'checked' : '') + '> Featured product</label><label><input name="topSelling" type="checkbox" ' + (p.topSelling ? 'checked' : '') + '> Top selling</label><label><input name="topRated" type="checkbox" ' + (p.topRated ? 'checked' : '') + '> Top rated</label><label><input name="active" type="checkbox" value="active" ' + (p.active !== false ? 'checked' : '') + '> Active</label></div><div class="admin-actions"><button class="btn-primary" type="submit">Save product</button><button class="btn-danger" type="button" data-delete-product="' + (p.id || '') + '">Deactivate product</button></div></form>'; };
+    const productRows = (items) => items.map((p) => '<tr><td data-label="Image"><img loading="lazy" decoding="async" width="52" height="52" src="' + imageFor(p) + '" alt="' + adminEsc(p.name) + '"></td><td data-label="Name"><strong>' + adminEsc(p.name) + '</strong><small>' + adminEsc(p.model || '') + '</small><small>' + (p.dbId ? 'Supabase row: ' + adminEsc(p.dbId) : 'Bundled backup - save to add to Supabase') + '</small></td><td data-label="Category">' + titleFor(p.category) + '</td><td data-label="Brand">' + adminEsc(p.brand) + '</td><td data-label="Price">' + displayPrice(p) + '</td><td data-label="Old price">' + displayOldPrice(p) + '</td><td data-label="Stock">' + p.stock + '</td><td data-label="Condition">' + adminEsc(p.condition) + '</td><td data-label="Status"><span class="admin-status ' + productStatus(p).toLowerCase().replace(/\s+/g, '-') + '">' + productStatus(p) + '</span></td><td data-label="Actions"><button type="button" data-edit-product="' + p.id + '">Edit</button><button type="button" data-duplicate-product="' + p.id + '">Duplicate</button><button type="button" data-delete-product="' + p.id + '">Delete</button></td></tr>').join('');
+    const productForm = () => { const p = selected(); const specs = p.specs || {}; return '<form class="admin-editor admin-panel" data-admin-form><input type="hidden" name="localId" value="' + adminEsc(p.localId || p.id || '') + '"><input type="hidden" name="dbId" value="' + adminEsc(p.dbId || '') + '"><input type="hidden" name="source" value="' + adminEsc(p.source || (p.dbId ? 'supabase' : 'local')) + '"><div class="admin-panel-head"><div><h2>Add/Edit Product</h2><p>Editing: <strong>' + adminEsc(p.name || 'New product') + '</strong></p><p class="admin-note">' + (p.dbId ? 'Source: Supabase. Local ID: ' + adminEsc(p.localId || p.id || '') : 'Unsaved draft. Press Save product to write it to Supabase.') + '</p></div><button class="btn-ghost" type="button" data-new-product>New product</button></div><div class="form-grid"><label>Product ID<input name="id" value="' + adminEsc(p.id || '') + '"></label><label>Product name<input name="name" required value="' + adminEsc(p.name || '') + '"></label></div><div class="form-grid"><label>Category<select name="category"><option value="phones">Phones</option><option value="laptops">Laptops</option><option value="macbooks">MacBooks</option><option value="accessories">Accessories</option><option value="services">Services</option></select></label><label>Subcategory<input name="subcategory" value="' + adminEsc(p.subcategory || '') + '"></label></div><div class="form-grid"><label>Brand<input name="brand" value="' + adminEsc(p.brand || '') + '"></label><label>Model<input name="model" value="' + adminEsc(p.model || '') + '"></label></div><div class="form-grid"><label>Badge<input name="badge" value="' + adminEsc(p.badge || '') + '"></label><label>Price<input name="price" value="' + displayPrice(p) + '"></label></div><div class="form-grid"><label>Old price<input name="oldPrice" value="' + displayOldPrice(p) + '"></label><label>Stock quantity<input name="stock" type="number" min="0" value="' + (p.stock ?? 0) + '"></label></div><div class="form-grid"><label>Availability<select name="status"><option>In Stock</option><option>Low Stock</option><option>Out of Stock</option></select></label><label>Condition<select name="condition"><option>Brand New</option><option>Used</option><option>UK Used</option><option>Refurbished</option></select></label></div><div class="form-grid"><label>Service group<select name="serviceGroup"><option value="">Not a service</option><option value="design">Graphic Design</option><option value="repair">Repair</option></select></label></div><label class="admin-image-source">Product images<textarea name="images" rows="3">' + adminEsc((p.images || []).join('\n')) + '</textarea></label><div class="admin-image-manager" data-image-manager><input type="file" accept="image/*" multiple hidden data-image-picker><button class="admin-image-drop" type="button" data-image-drop><strong>Drop product images here</strong><span>Uploads go to Supabase Storage. You can also paste image URLs.</span></button><div class="admin-image-url-row"><input type="text" data-image-url placeholder="Image URL or relative path, e.g. Images/product.jpg"><button class="btn-ghost" type="button" data-add-image-url>Add URL</button></div><p class="admin-image-warning" data-image-warning hidden></p><div class="admin-image-list" data-image-list></div></div><label>Short description<textarea name="shortDescription" rows="2">' + adminEsc(p.shortDescription || '') + '</textarea></label><label>Full description<textarea name="description" rows="4">' + adminEsc(p.description || '') + '</textarea></label><div class="form-grid"><label>Processor<input name="processor" value="' + adminEsc(specs.processor || '') + '"></label><label>RAM<input name="ram" value="' + adminEsc(specs.ram || '') + '"></label></div><div class="form-grid"><label>Storage<input name="storage" value="' + adminEsc(specs.storage || '') + '"></label><label>Display<input name="display" value="' + adminEsc(specs.display || '') + '"></label></div><div class="form-grid"><label>Graphics<input name="graphics" value="' + adminEsc(specs.graphics || '') + '"></label><label>Battery<input name="battery" value="' + adminEsc(specs.battery || '') + '"></label></div><div class="form-grid"><label>Rating<input name="rating" type="number" min="4.4" max="4.9" step="0.1" value="' + (p.rating || 4.5) + '"></label><label>Reviews<input name="reviews" type="number" min="0" value="' + (p.reviews || 0) + '"></label></div><label>Tags<textarea name="tags" rows="3">' + adminEsc((p.tags || []).join('\n')) + '</textarea></label><label>WhatsApp message template<textarea name="whatsappTemplate" rows="2">' + adminEsc(p.whatsappTemplate || '') + '</textarea></label><div class="admin-checks"><label><input name="featured" type="checkbox" ' + (p.featured ? 'checked' : '') + '> Featured product</label><label><input name="topSelling" type="checkbox" ' + (p.topSelling ? 'checked' : '') + '> Top selling</label><label><input name="topRated" type="checkbox" ' + (p.topRated ? 'checked' : '') + '> Top rated</label><label><input name="active" type="checkbox" value="active" ' + (p.active !== false ? 'checked' : '') + '> Active</label></div><div class="admin-actions"><button class="btn-primary" type="submit">Save product</button><button class="btn-danger" type="button" data-delete-product="' + (p.id || '') + '">Deactivate product</button></div></form>'; };
     const products = () => productForm() + '<section class="admin-panel"><div class="admin-panel-head"><h2>Product Management</h2><button class="btn-primary" type="button" data-new-product>New product</button></div><div class="admin-filters"><input data-product-filter="query" placeholder="Search by name"><select data-product-filter="category"><option value="all">All categories</option><option value="phones">Phones</option><option value="laptops">Laptops</option><option value="macbooks">MacBooks</option><option value="accessories">Accessories</option><option value="services">Services</option></select><select data-product-filter="brand"><option value="all">All brands</option>' + brands().map((b) => '<option value="' + adminEsc(b) + '">' + adminEsc(b) + '</option>').join('') + '</select><select data-product-filter="status"><option value="all">All status</option><option>In Stock</option><option>Low Stock</option><option>Out of Stock</option></select><select data-product-filter="condition"><option value="all">All conditions</option>' + conditions().map((c) => '<option>' + adminEsc(c) + '</option>').join('') + '</select></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Brand</th><th>Price</th><th>Old price</th><th>Stock</th><th>Condition</th><th>Status</th><th>Actions</th></tr></thead><tbody>' + productRows(filtered()) + '</tbody></table></div></section>';
     const orders = () => { const all = loadOrders(); const list = all.filter((o) => orderFilter === 'all' || (o.status || 'Pending') === orderFilter); return '<section class="admin-panel"><div class="admin-panel-head"><h2>Orders</h2><select data-order-filter><option value="all">All orders</option><option>Pending</option><option>Confirmed</option><option>Delivered</option><option>Cancelled</option></select></div><div class="admin-order-list">' + (list.length ? list.map((o) => { const i = all.indexOf(o); const c = o.customer || {}; return '<article class="admin-order"><div><strong>' + adminEsc(o.orderNumber || 'Order') + '</strong><span>' + (o.createdAt ? new Date(o.createdAt).toLocaleString() : '') + '</span></div><div class="admin-order-details"><p><strong>Customer:</strong> ' + adminEsc(c.name || o.name || 'Customer') + '</p><p><strong>Phone:</strong> ' + adminEsc(c.phone || o.phone || '') + '</p><p><strong>Location:</strong> ' + adminEsc(c.location || '') + '</p><p><strong>Delivery:</strong> ' + adminEsc(c.deliveryMethod || '') + ' - ' + adminEsc(c.address || o.deliveryLocation || '') + '</p></div><small>' + adminEsc((o.items || []).map((item) => item.name + ' x ' + item.qty + ' = ' + money(item.lineTotal)).join(', ')) + '</small><div class="admin-order-foot"><strong>' + money(orderTotal(o)) + '</strong><select data-order-status="' + i + '"><option>Pending</option><option>Confirmed</option><option>Delivered</option><option>Cancelled</option></select><a class="btn-whatsapp" href="' + whatsAppLink(null, orderWhatsAppMessage(o)) + '" target="_blank" rel="noopener">WhatsApp</a><button data-complete-order="' + i + '">Mark completed</button></div></article>'; }).join('') : '<div class="empty-state"><h3>No orders found</h3><p>Orders created from checkout will appear here.</p></div>') + '</div></section>'; };
     const categories = () => { const cats = loadCategories(); return '<section class="admin-panel"><h2>Categories</h2><div class="admin-category-grid">' + Object.entries(cats).map(([cat, subs]) => '<article><h3>' + cat + '</h3><textarea data-category-edit="' + cat + '" rows="6">' + subs.join('\n') + '</textarea></article>').join('') + '</div><button class="btn-primary" data-save-categories>Save categories</button></section>'; };
-    const services = () => { const inquiries = loadServiceInquiries(); return '<section class="admin-panel"><h2>Services Management</h2><p>Edit service name, group, starting price, image, description, WhatsApp template, and active status from the Product Management form.</p><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Image</th><th>Service</th><th>Group</th><th>Starting price</th><th>Status</th><th>Actions</th></tr></thead><tbody>' + state.products.filter((p) => p.category === 'services').map((p) => '<tr><td data-label="Image"><img src="' + imageFor(p) + '" alt="' + adminEsc(p.name) + '"></td><td data-label="Service">' + adminEsc(p.name) + '</td><td data-label="Group">' + (p.serviceGroup === 'repair' ? 'Repair' : 'Graphic Design') + '</td><td data-label="Starting price">' + displayPrice(p) + '</td><td data-label="Status">' + (p.active === false ? 'Inactive' : 'Active') + '</td><td data-label="Actions"><button type="button" data-edit-product="' + p.id + '">Edit</button></td></tr>').join('') + '</tbody></table></div></section><section class="admin-panel"><h2>Service Inquiries</h2>' + (inquiries.length ? '<div class="admin-order-list">' + inquiries.map((q) => '<article class="admin-order service-inquiry"><div><strong>' + adminEsc(q.service) + '</strong><span>' + (q.createdAt ? new Date(q.createdAt).toLocaleString() : '') + '</span></div><p>' + adminEsc(q.name) + ' - ' + adminEsc(q.phone) + '</p><p>' + adminEsc(q.message) + '</p><small>' + adminEsc(q.group || '') + ' - ' + adminEsc(q.status || 'New') + '</small><a class="btn-whatsapp" href="' + whatsAppLink(null, 'Hello Surge Tech UG, I am following up on service inquiry ' + (q.id || '') + ' for ' + q.service + '.') + '" target="_blank" rel="noopener">WhatsApp</a></article>').join('') + '</div>' : '<div class="empty-state"><h3>No service inquiries yet</h3><p>Service chatbox requests will appear here.</p></div>') + '</section>'; };
+    const services = () => { const inquiries = loadServiceInquiries(); return '<section class="admin-panel"><h2>Services Management</h2><p>Edit service name, group, starting price, image, description, WhatsApp template, and active status from the Product Management form.</p><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Image</th><th>Service</th><th>Group</th><th>Starting price</th><th>Status</th><th>Actions</th></tr></thead><tbody>' + state.products.filter((p) => p.category === 'services').map((p) => '<tr><td data-label="Image"><img loading="lazy" decoding="async" width="52" height="52" src="' + imageFor(p) + '" alt="' + adminEsc(p.name) + '"></td><td data-label="Service">' + adminEsc(p.name) + '</td><td data-label="Group">' + (p.serviceGroup === 'repair' ? 'Repair' : 'Graphic Design') + '</td><td data-label="Starting price">' + displayPrice(p) + '</td><td data-label="Status">' + (p.active === false ? 'Inactive' : 'Active') + '</td><td data-label="Actions"><button type="button" data-edit-product="' + p.id + '">Edit</button></td></tr>').join('') + '</tbody></table></div></section><section class="admin-panel"><h2>Service Inquiries</h2>' + (inquiries.length ? '<div class="admin-order-list">' + inquiries.map((q) => '<article class="admin-order service-inquiry"><div><strong>' + adminEsc(q.service) + '</strong><span>' + (q.createdAt ? new Date(q.createdAt).toLocaleString() : '') + '</span></div><p>' + adminEsc(q.name) + ' - ' + adminEsc(q.phone) + '</p><p>' + adminEsc(q.message) + '</p><small>' + adminEsc(q.group || '') + ' - ' + adminEsc(q.status || 'New') + '</small><a class="btn-whatsapp" href="' + whatsAppLink(null, 'Hello Surge Tech UG, I am following up on service inquiry ' + (q.id || '') + ' for ' + q.service + '.') + '" target="_blank" rel="noopener">WhatsApp</a></article>').join('') + '</div>' : '<div class="empty-state"><h3>No service inquiries yet</h3><p>Service chatbox requests will appear here.</p></div>') + '</section>'; };
     const settings = () => { const st = loadSettings(); return '<section class="admin-panel"><h2>Settings</h2><form class="admin-editor" data-settings-form><div class="form-grid"><label>Business name<input name="businessName" value="' + adminEsc(st.businessName) + '"></label><label>Main phone<input name="phone" value="' + adminEsc(st.phone) + '"></label></div><div class="form-grid"><label>WhatsApp number<input name="whatsapp" value="' + adminEsc(st.whatsapp) + '"></label><label>Location<input name="location" value="' + adminEsc(st.location) + '"></label></div><label>Delivery note<textarea name="deliveryNote" rows="3">' + adminEsc(st.deliveryNote) + '</textarea></label><label>Warranty note<textarea name="warrantyNote" rows="3">' + adminEsc(st.warrantyNote) + '</textarea></label><label>Return policy<textarea name="returnPolicy" rows="3">' + adminEsc(st.returnPolicy) + '</textarea></label><div class="form-grid"><label>Facebook<input name="facebook" value="' + adminEsc(st.facebook) + '"></label><label>Instagram<input name="instagram" value="' + adminEsc(st.instagram) + '"></label><label>TikTok<input name="tiktok" value="' + adminEsc(st.tiktok) + '"></label><label>X<input name="x" value="' + adminEsc(st.x) + '"></label><label>YouTube<input name="youtube" value="' + adminEsc(st.youtube) + '"></label></div><button class="btn-primary">Save settings</button></form></section>'; };
-    const backup = () => '<section class="admin-panel"><h2>Backup / Restore</h2><p class="admin-note">Products, settings, orders, and service inquiries save to Supabase when your URL, anon key, and RLS policies are configured. Local admin edits in <strong>surgeAdminProducts</strong> are protected and used first until you export, restore, or migrate them.</p><div class="admin-backup"><button class="btn-primary" data-download-local-products>Download Local Products Backup</button><button class="btn-ghost" data-copy-local-products>Copy Local Products JSON</button><button class="btn-secondary" data-export-products>Export products.json compatible file</button><button class="btn-ghost" data-export-orders>Export orders JSON</button><button class="btn-primary" data-migrate-local-products>Migrate Local Products to Supabase</button><button class="btn-danger" data-reset-products>Reload default products</button></div><label>Restore from backup JSON<textarea data-import-json rows="10" placeholder="Paste a products.json compatible backup here. It can be { &quot;products&quot;: [...] } or an array."></textarea></label><button class="btn-secondary" data-import-products>Restore from backup JSON</button><pre data-export-output></pre></section>';
+    const backup = () => '<section class="admin-panel"><h2>Backup / Restore</h2><p class="admin-note">The current catalogue is loaded from Supabase. Exports are downloaded files only; product data is not stored in the browser.</p><div class="admin-backup"><button class="btn-secondary" data-export-products>Export products backup</button><button class="btn-ghost" data-export-orders>Export orders JSON</button><button class="btn-primary" data-migrate-local-products>Migrate bundled backup to Supabase</button><button class="btn-danger" data-reset-products>Reload from Supabase</button></div><label>Import backup to Supabase<textarea data-import-json rows="10" placeholder="Paste a products.json compatible backup here. It can be { &quot;products&quot;: [...] } or an array."></textarea></label><button class="btn-secondary" data-import-products>Import directly to Supabase</button><pre data-export-output></pre></section>';
     const content = () => ({ overview, products, orders, categories, services, settings, backup }[section] || overview)();
-    const render = () => { root.innerHTML = '<section class="page-hero"><h1>Admin Dashboard</h1><p>Manage products, orders, services, categories, settings, and backups. Supabase is available when configured; local edited products are protected and shown first.</p></section>' + (location.protocol === 'file:' ? '<section class="admin-panel admin-local-rescue"><strong>Open admin through localhost or Netlify.</strong><p>You are using file://, which can break database requests, product loading, and admin saves. Use http://localhost:8888/surgetechug/admin.html or the live Netlify admin URL.</p></section>' : '') + dbStatus() + (hasLocalAdminProducts() ? '<section class="admin-panel admin-local-rescue"><strong>You have locally edited products saved in this browser.</strong><p>Export or migrate them before resetting.</p></section>' : '') + '<nav class="admin-tabs">' + tabs() + '</nav>' + content(); bind(); };
+    const render = () => { root.innerHTML = '<section class="page-hero"><h1>Admin Dashboard</h1><p>Manage products, orders, services, categories, settings, and backups. Product edits save directly to Supabase.</p></section>' + (location.protocol === 'file:' ? '<section class="admin-panel admin-local-rescue"><strong>Open admin through localhost or Netlify.</strong><p>You are using file://, which can break database requests, product loading, and admin saves. Use http://localhost:8888/surgetechug/admin.html or the live Netlify admin URL.</p></section>' : '') + dbStatus() + '<nav class="admin-tabs">' + tabs() + '</nav>' + content(); bind(); };
     const bind = () => {
       root.querySelectorAll('[data-admin-section]').forEach((b) => b.addEventListener('click', () => { section = b.dataset.adminSection; render(); }));
       root.querySelectorAll('[data-product-filter]').forEach((input) => { input.value = filters[input.dataset.productFilter] || 'all'; input.addEventListener('input', () => { filters[input.dataset.productFilter] = input.dataset.productFilter === 'query' ? normalizeSearchText(input.value) : input.value; render(); }); });
       root.querySelectorAll('[data-edit-product]').forEach((b) => b.addEventListener('click', () => { const product = productById(b.dataset.editProduct); console.info('Surge admin selected product before edit', { product, id: product?.id, localId: product?.localId, dbId: product?.dbId, source: product?.source || (product?.dbId ? 'supabase' : 'local') }); selectedId = b.dataset.editProduct; section = 'products'; render(); root.querySelector('[data-admin-form]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
-      root.querySelectorAll('[data-duplicate-product]').forEach((b) => b.addEventListener('click', async () => { try { const p = productById(b.dataset.duplicateProduct); if (!p) return; const copySlug = p.id + '-copy-' + Date.now().toString().slice(-4); const copy = { ...p, dbId: '', id: copySlug, slug: copySlug, name: p.name + ' Copy', createdAt: todayStamp(), updatedAt: todayStamp() }; const saved = await saveAdminProduct(copy); selectedId = saved.id; section = 'products'; toast(state.supabaseOnline ? 'Product duplicated in Supabase' : 'Product duplicated in local cache'); render(); } catch (error) { toast(error.message || 'Could not duplicate product'); } }));
+      root.querySelectorAll('[data-duplicate-product]').forEach((b) => b.addEventListener('click', async () => { try { const p = productById(b.dataset.duplicateProduct); if (!p) return; const copySlug = p.id + '-copy-' + Date.now().toString().slice(-4); const copy = { ...p, dbId: '', id: copySlug, localId: copySlug, slug: copySlug, name: p.name + ' Copy', createdAt: todayStamp(), updatedAt: todayStamp() }; const saved = await saveAdminProduct(copy); selectedId = saved.id; section = 'products'; toast('Product duplicated in Supabase'); render(); } catch (error) { toast(error.message || 'Could not duplicate product'); } }));
       root.querySelectorAll('[data-delete-product]').forEach((b) => b.addEventListener('click', async () => { try { const product = productById(b.dataset.deleteProduct); if (!product) return; if (!confirm('Deactivate ' + product.name + '? It will stop showing on the storefront but stay in the database.')) return; await deactivateAdminProduct(product); selectedId = state.products[0]?.id || ''; toast('Product deactivated'); render(); } catch (error) { toast(error.message || 'Could not deactivate product'); } }));
-      root.querySelectorAll('[data-new-product]').forEach((b) => b.addEventListener('click', async () => { try { const p = normalizeProducts([{ id: 'new-product-' + Date.now().toString().slice(-5), name: 'New Product', category: 'accessories', subcategory: 'Phone Accessories', brand: 'Surge Tech', model: '', price: 0, oldPrice: 0, stock: 1, status: 'In Stock', images: [fallbackImages.accessories], shortDescription: 'Available from Surge Tech UG.', description: 'Available from Surge Tech UG.', specs: {}, tags: [] }])[0]; const saved = await saveAdminProduct(p); selectedId = saved.id; section = 'products'; render(); root.querySelector('[data-admin-form] input[name="name"]')?.focus(); toast(state.supabaseOnline ? 'New product created in Supabase' : 'New product created in local cache'); } catch (error) { toast(error.message || 'Could not create product'); } }));
-      root.querySelector('[data-admin-form]')?.addEventListener('submit', async (event) => { event.preventDefault(); try { const previous = selected(); const nextProduct = productFormValues(event.currentTarget, previous); const saved = await saveAdminProduct(nextProduct); selectedId = saved.id; toast(state.supabaseOnline ? 'Product saved to Supabase.' : 'Product saved locally. It will show on this browser. To make it permanent online, export products JSON or migrate to Supabase.'); render(); } catch (error) { toast(error.message || 'Could not save product'); } });
+      root.querySelectorAll('[data-new-product]').forEach((b) => b.addEventListener('click', () => { const draftId = 'new-product-' + Date.now().toString().slice(-5); const p = normalizeProducts([{ id: draftId, localId: draftId, name: 'New Product', category: 'accessories', subcategory: 'Phone Accessories', brand: 'Surge Tech', model: '', price: 0, oldPrice: 0, stock: 1, status: 'In Stock', images: [fallbackImages.accessories], shortDescription: 'Available from Surge Tech UG.', description: 'Available from Surge Tech UG.', specs: {}, tags: [] }])[0]; saveAdminProducts([p, ...state.products.filter((item) => !isPlaceholderProduct(item))]); selectedId = p.id; section = 'products'; render(); root.querySelector('[data-admin-form] input[name="name"]')?.focus(); toast('New product draft ready. Press Save product to add it to Supabase.'); }));
+      root.querySelector('[data-admin-form]')?.addEventListener('submit', async (event) => { event.preventDefault(); try { const previous = selected(); const nextProduct = productFormValues(event.currentTarget, previous); const saved = await saveAdminProduct(nextProduct); selectedId = saved.id; toast('Product saved to Supabase.'); render(); } catch (error) { toast(error.message || 'Could not save product to Supabase'); } });
       const form = root.querySelector('[data-admin-form]'); if (form) { form.category.value = selected().category || 'accessories'; form.status.value = productStatus(selected()); form.condition.value = selected().condition || 'Brand New'; form.serviceGroup.value = selected().serviceGroup || ''; initAdminImageManager(form); }
       root.querySelectorAll('[data-order-status]').forEach((select) => { const orders = loadOrders(); select.value = orders[select.dataset.orderStatus]?.status || 'Pending'; select.addEventListener('change', async () => { try { orders[select.dataset.orderStatus].status = select.value; const supabase = await loadSupabaseClient(); if (supabase && orders[select.dataset.orderStatus]?.orderNumber) { const { error } = await supabase.from('orders').update({ status: select.value }).eq('order_number', orders[select.dataset.orderStatus].orderNumber); if (error) throw error; } saveOrders(orders); toast('Order updated'); render(); } catch (error) { toast(error.message || 'Could not update order'); } }); });
       root.querySelector('[data-order-filter]')?.addEventListener('input', (event) => { orderFilter = event.target.value; render(); });
@@ -1636,13 +1817,12 @@ const SurgeStore = (() => {
       root.querySelector('[data-save-categories]')?.addEventListener('click', () => { const cats = {}; root.querySelectorAll('[data-category-edit]').forEach((input) => { cats[input.dataset.categoryEdit] = input.value.split(/\n|,/).map((item) => item.trim()).filter(Boolean); }); localStorage.setItem('surgeCategories', JSON.stringify(cats)); toast('Categories saved'); });
       root.querySelector('[data-settings-form]')?.addEventListener('submit', async (event) => { event.preventDefault(); try { const data = { ...loadSettings(), ...Object.fromEntries(new FormData(event.currentTarget).entries()) }; await saveSettingsOnline(data); toast(state.supabaseOnline ? 'Settings saved to Supabase' : 'Settings saved locally because Supabase is not configured'); render(); } catch (error) { toast(error.message || 'Could not save settings'); } });
       root.querySelectorAll('[data-test-supabase]').forEach((b) => b.addEventListener('click', async () => { const result = await testSupabaseConnection(); root.querySelectorAll('[data-db-status-output]').forEach((node) => { node.textContent = result.message; }); toast(result.message); }));
-      root.querySelectorAll('[data-download-local-products]').forEach((b) => b.addEventListener('click', () => { const local = loadLocalAdminProducts(); const exportData = productsBackupData(local.length ? local : state.products); root.querySelectorAll('[data-export-output]').forEach((node) => { node.textContent = JSON.stringify(exportData, null, 2); }); downloadJson(backupFilename(), exportData); toast(local.length ? 'Local products backup downloaded.' : 'No local products found. Current products backup downloaded.'); }));
-      root.querySelectorAll('[data-copy-local-products]').forEach((b) => b.addEventListener('click', async () => { const local = loadLocalAdminProducts(); const exportData = productsBackupData(local.length ? local : state.products); root.querySelectorAll('[data-export-output]').forEach((node) => { node.textContent = JSON.stringify(exportData, null, 2); }); try { await copyJson(exportData); toast('Products JSON copied to clipboard.'); } catch { toast('Could not copy automatically. Select and copy the JSON shown below.'); } }));
-      root.querySelectorAll('[data-export-products]').forEach((b) => b.addEventListener('click', () => { const local = loadLocalAdminProducts(); const exportData = productsBackupData(local.length ? local : state.products); root.querySelectorAll('[data-export-output]').forEach((node) => { node.textContent = JSON.stringify(exportData, null, 2); }); downloadJson(backupFilename('products'), exportData); toast('products.json compatible backup downloaded.'); }));
+      root.querySelector('[data-admin-logout]')?.addEventListener('click', async () => { await signOutAdmin(); state.products = []; renderAdmin(root); toast('Signed out'); });
+      root.querySelectorAll('[data-export-products]').forEach((b) => b.addEventListener('click', () => { const exportData = productsBackupData(state.products); root.querySelectorAll('[data-export-output]').forEach((node) => { node.textContent = JSON.stringify(exportData, null, 2); }); downloadJson(backupFilename('products'), exportData); toast('Supabase products backup downloaded.'); }));
       root.querySelector('[data-export-orders]')?.addEventListener('click', () => { root.querySelector('[data-export-output]').textContent = JSON.stringify(loadOrders(), null, 2); });
       root.querySelectorAll('[data-migrate-local-products]').forEach((b) => b.addEventListener('click', async () => { try { const result = await migrateLocalProductsToSupabase(); root.querySelectorAll('[data-export-output]').forEach((node) => { node.textContent = JSON.stringify(result, null, 2); }); toast(result.message || `Migrated ${result.migrated.length} products to Supabase${result.failed.length ? '; check failed list below.' : '.'}`); } catch (error) { toast(error.message || 'Could not migrate products'); } }));
-      root.querySelector('[data-reset-products]')?.addEventListener('click', async () => { if (!confirm('This may remove locally edited admin products from this browser. Export backup first. Continue?')) return; await resetAdminProducts(true); selectedId = state.products[0]?.id || ''; toast('Products reloaded'); render(); });
-      root.querySelector('[data-import-products]')?.addEventListener('click', async () => { try { const raw = root.querySelector('[data-import-json]').value; const data = JSON.parse(raw); const products = validateImportedProducts(Array.isArray(data) ? data : data.products); saveAdminProducts(products); if (supabaseReady() && confirm('Also upload restored products to Supabase?')) for (const product of products) await saveAdminProduct(product); selectedId = state.products[0]?.id || ''; toast(supabaseReady() ? 'Products restored locally. Supabase upload attempted if confirmed.' : 'Products restored locally.'); render(); } catch (error) { toast(error.message || 'Invalid JSON import'); } });
+      root.querySelector('[data-reset-products]')?.addEventListener('click', async () => { if (!confirm('Discard unsaved form changes and reload products from Supabase?')) return; await resetAdminProducts(true); selectedId = state.products[0]?.id || ''; toast('Products reloaded from Supabase'); render(); });
+      root.querySelector('[data-import-products]')?.addEventListener('click', async () => { try { const raw = root.querySelector('[data-import-json]').value; const data = JSON.parse(raw); const products = validateImportedProducts(Array.isArray(data) ? data : data.products); if (!confirm('Import these products directly into Supabase? Existing rows with matching local IDs will be updated.')) return; for (const product of products) await saveAdminProduct(product); await loadProducts(true); selectedId = state.products[0]?.id || ''; toast('Products imported directly into Supabase.'); render(); } catch (error) { toast(error.message || 'Invalid JSON import or Supabase save failed'); } });
     };
     render();
   }
@@ -1726,7 +1906,7 @@ const SurgeStore = (() => {
     const lines = state.cart.map((item) => ({ item, product: productById(item.id) })).filter((line) => line.product);
     list.innerHTML = lines.length
       ? lines
-          .map(({ item, product }) => `<div class="cart-line"><img src="${imageFor(product)}" onerror="this.onerror=null;this.src='${imageFallbackFor(product)}'" alt="${product.name}"><div><h4>${product.name}</h4><strong>${money(parsePrice(product.price) * item.qty)}</strong><div class="cart-qty"><button data-dec="${product.id}">-</button><span>${item.qty}</span><button data-inc="${product.id}">+</button></div></div><button class="btn-danger" data-remove="${product.id}">Remove</button></div>`)
+          .map(({ item, product }) => `<div class="cart-line"><img loading="lazy" decoding="async" width="72" height="72" src="${imageFor(product)}" onerror="this.onerror=null;this.src='${imageFallbackFor(product)}'" alt="${product.name}"><div><h4>${product.name}</h4><strong>${money(parsePrice(product.price) * item.qty)}</strong><div class="cart-qty"><button data-dec="${product.id}">-</button><span>${item.qty}</span><button data-inc="${product.id}">+</button></div></div><button class="btn-danger" data-remove="${product.id}">Remove</button></div>`)
           .join("")
       : `<div class="empty-state"><h3>Your cart is empty</h3><a class="btn-primary" href="index.html">Continue Shopping</a></div>`;
   }
@@ -1806,6 +1986,7 @@ const SurgeStore = (() => {
         if (service) openServiceChat(service);
       }
       if (event.target.closest("[data-back-top]")) scrollTo({ top: 0, behavior: "smooth" });
+      if (event.target.closest("[data-load-more]")) showMoreCategoryProducts();
     });
 
     document.querySelector("[data-category-jump]")?.addEventListener("change", (event) => (location.href = event.target.value));
@@ -1814,7 +1995,7 @@ const SurgeStore = (() => {
     const suggestions = document.querySelector("[data-suggestions]");
     const renderSearchSuggestions = () => {
       if (!input || !suggestions) return;
-      const query = input.value.toLowerCase().trim();
+      const query = normalizeSearchText(input.value);
       if (!query) {
         const recentSearches = loadRecentSearches();
         suggestions.innerHTML = recentSearches.length
@@ -1824,10 +2005,12 @@ const SurgeStore = (() => {
         return;
       }
       const found = storefrontProducts()
-        .filter((product) => productMatchesSearch(product, input.value))
+        .map((product) => ({ product, score: productSearchScore(product, query) }))
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score)
         .slice(0, 8);
       suggestions.innerHTML = found.length
-        ? found.map((product) => `<a class="suggestion-item" href="product.html?id=${encodeURIComponent(product.id)}"><img src="${imageFor(product)}" onerror="this.onerror=null;this.src='${imageFallbackFor(product)}'" alt="${product.name}"><span><strong>${product.name}</strong><br><small>${displayPrice(product)}</small></span><small>${titleFor(product.category)}</small></a>`).join("")
+        ? found.map(({ product }) => `<a class="suggestion-item" href="product.html?id=${encodeURIComponent(product.id)}"><img loading="lazy" decoding="async" width="52" height="52" src="${imageFor(product)}" onerror="this.onerror=null;this.src='${imageFallbackFor(product)}'" alt="${product.name}"><span><strong>${product.name}</strong><br><small>${displayPrice(product)}</small></span><small>${titleFor(product.category)}</small></a>`).join("")
         : `<div class="suggestion-item">No results found</div>`;
       suggestions.classList.add("active");
     };
@@ -1837,7 +2020,7 @@ const SurgeStore = (() => {
       saveRecentSearch(query);
       location.href = `search.html?q=${encodeURIComponent(query)}`;
     });
-    input?.addEventListener("input", renderSearchSuggestions);
+    input?.addEventListener("input", debounce(renderSearchSuggestions));
     input?.addEventListener("focus", renderSearchSuggestions);
     document.addEventListener("click", (event) => {
       if (!event.target.closest("[data-search-form]")) suggestions?.classList.remove("active");
@@ -1860,17 +2043,24 @@ const SurgeStore = (() => {
   }
 
   async function init() {
-    await loadSettingsOnline();
+    const root = document.querySelector("[data-page]");
+    const page = root?.dataset.page || "";
+    const isAdmin = page === "admin";
+    clearHeavyProductStorage();
+    loadSettings();
     renderShell();
     bindGlobalEvents();
-    const root = document.querySelector("[data-page]");
-    await loadProducts(root?.dataset.page === "admin");
-    await Promise.all([loadOrdersOnline(), loadServiceInquiriesOnline()]);
+    if (isAdmin) {
+      if (await checkAdminAuth()) {
+        await Promise.all([loadSettingsOnline(), loadProducts(true), loadOrdersOnline(), loadServiceInquiriesOnline()]);
+      }
+    } else {
+      await loadProducts(false);
+    }
     state.cart = state.cart.filter((item) => productById(item.id));
     state.wishlist = state.wishlist.filter((id) => productById(id));
     save();
     if (root) {
-      const page = root.dataset.page;
       document.body.dataset.page = page;
       document.body.classList.add(`page-${page}`);
       if (page === "home") renderHome(root);
@@ -1901,4 +2091,5 @@ const SurgeStore = (() => {
   return { init, addToCart, toggleWishlist, loadProducts, saveAdminProducts, resetAdminProducts };
 })();
 
-document.addEventListener("DOMContentLoaded", SurgeStore.init);
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", SurgeStore.init, { once: true });
+else SurgeStore.init();

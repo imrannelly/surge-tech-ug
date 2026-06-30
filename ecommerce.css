@@ -107,6 +107,13 @@ img,video,canvas,svg{max-width:100%}
   .footer-grid{grid-template-columns:1fr}
   .newsletter{display:grid;grid-template-columns:1fr}
 }
+
+/* Performance helpers: reserve space for deferred content and span grid controls. */
+.product-media img{aspect-ratio:1/1}
+.deferred-collection{content-visibility:auto;contain-intrinsic-size:520px}
+.deferred-collection:not([data-rendered]) .product-grid{min-height:380px}
+.product-load-more{grid-column:1/-1;display:grid;justify-items:center;gap:7px;padding:12px}
+.product-load-more small{color:var(--st-muted);font-weight:700}
 @media(max-width:380px){
   .product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .product-card{min-height:304px}
